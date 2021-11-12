@@ -54,3 +54,20 @@ func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
 		t.Fatal("wrong result found", result)
 	}
 }
+
+func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
+	result, err := ProtoSelectNewMessageFieldPosition(genesisProtoFile, SelectOptions{
+		"name": "GenesisState",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.SourcePosition == nil {
+		t.Fatal("did not find message")
+	}
+
+	if result.SourcePosition.Line != 7 || result.SourcePosition.Col != 23 {
+		t.Fatal("wrong result found", result)
+	}
+}

@@ -52,3 +52,17 @@ var ProtoSelectNewImportPosition = wrapFinder(
 		}
 	},
 )
+
+// ProtoSelectNewMessageFieldPosition selects a position for where a new field in a message can be added.
+var ProtoSelectNewMessageFieldPosition = wrapFinder(func(result *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc {
+	return func(node ast.Node) (bool, ast.VisitFunc) {
+		if n, ok := node.(*ast.MessageNode); ok {
+			if n.Name.Val == options["name"] {
+				// If the message's name matches then we are on the correct one.
+				result.SourcePosition = n.OpenBrace.End()
+			}
+		}
+
+		return true, nil
+	}
+})
