@@ -18,8 +18,8 @@ type protoPositionFinder func(result *ProtoPositionSelectorResult, options Selec
 
 // wrapFinder creates a selector out of each finder.
 func wrapFinder(find protoPositionFinder) ProtoPositionSelector {
-	return func(content string, options SelectOptions) (*ProtoPositionSelectorResult, error) {
-		parsedAST, err := parseProto(content)
+	return func(code string, options SelectOptions) (*ProtoPositionSelectorResult, error) {
+		parsedAST, err := parseProto(code)
 		if err != nil {
 			return nil, err
 		}
@@ -111,3 +111,13 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 		}
 	},
 )
+
+// ProtoSelectLastPosition selects the last position within the code.
+func ProtoSelectLastPosition(code string) (*ProtoPositionSelectorResult, error) {
+	parsedAST, err := parseProto(code)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProtoPositionSelectorResult{SourcePosition: parsedAST.End()}, nil
+}

@@ -116,3 +116,18 @@ func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
 		t.Fatal("wrong result found", result)
 	}
 }
+
+func TestProtoSelectLastPosition(t *testing.T) {
+	result, err := ProtoSelectLastPosition(queryProtoFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.SourcePosition == nil {
+		t.Fatal("did not find message")
+	}
+
+	if result.SourcePosition.Line != 12 || result.SourcePosition.Col != 2 {
+		t.Fatal("wrong result found", result)
+	}
+}
