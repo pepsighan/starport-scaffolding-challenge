@@ -25,6 +25,20 @@ service Query {
 
 }`
 
+const packetProtoFile = `syntax = "proto3";
+package cosmonaut.mars.mars;
+
+option go_package = "github.com/cosmonaut/mars/x/mars/types";
+
+message MarsPacketData {
+  oneof packet {
+    NoData noData = 1;
+  }
+}
+
+message NoData {
+}`
+
 func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
 	result, err := ProtoSelectNewImportPosition(genesisProtoFile, nil)
 	if err != nil {
@@ -85,6 +99,20 @@ func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
 	}
 
 	if result.SourcePosition.Line != 10 || result.SourcePosition.Col != 16 {
+		t.Fatal("wrong result found", result)
+	}
+}
+
+func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
+	result, err := ProtoSelectNewOneOfFieldPosition(packetProtoFile, SelectOptions{
+		"messageName": "NoData",
+		"oneOfName":   "packet",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.SourcePosition != nil {
 		t.Fatal("wrong result found", result)
 	}
 }
