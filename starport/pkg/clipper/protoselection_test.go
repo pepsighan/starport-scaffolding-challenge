@@ -37,6 +37,7 @@ message MarsPacketData {
 }
 
 message NoData {
+
 }`
 
 func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
