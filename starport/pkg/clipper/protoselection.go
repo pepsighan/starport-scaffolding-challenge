@@ -14,7 +14,7 @@ type ProtoPositionSelectorResult struct {
 type ProtoPositionSelector func(code string, options SelectOptions) (*ProtoPositionSelectorResult, error)
 
 // protoPositionFinder tries to find a required position during a walk of the protobuf AST.
-type protoPositionFinder func(sourcePos *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc
+type protoPositionFinder func(result *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc
 
 // wrapFinder creates a selector out of each finder.
 func wrapFinder(find protoPositionFinder) ProtoPositionSelector {
@@ -33,3 +33,22 @@ func wrapFinder(find protoPositionFinder) ProtoPositionSelector {
 		return result, nil
 	}
 }
+
+// ProtoSelectNewImportPosition selects a position for where a new import can be added. For example: right after
+// existing imports or the package declaration.
+var ProtoSelectNewImportPosition = wrapFinder(
+	func(result *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc {
+		return func(node ast.Node) (bool, ast.VisitFunc) {
+			// Find the last item position. New import will be appended to the last import item
+			// if it exists.
+			switch n := node.(type) {
+			case *ast.PackageNode:
+				result.SourcePosition = n.End()
+			case *ast.ImportNode:
+				result.SourcePosition = n.End()
+			}
+
+			return true, nil
+		}
+	},
+)
