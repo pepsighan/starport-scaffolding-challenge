@@ -66,3 +66,17 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(func(result *ProtoPositionSe
 		return true, nil
 	}
 })
+
+// ProtoSelectNewServiceMethodPosition selects a position for where a new method in a service can be added.
+var ProtoSelectNewServiceMethodPosition = wrapFinder(func(result *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc {
+	return func(node ast.Node) (bool, ast.VisitFunc) {
+		if n, ok := node.(*ast.ServiceNode); ok {
+			if n.Name.Val == options["name"] {
+				// If the message's name matches then we are on the correct one.
+				result.SourcePosition = n.OpenBrace.End()
+			}
+		}
+
+		return true, nil
+	}
+})

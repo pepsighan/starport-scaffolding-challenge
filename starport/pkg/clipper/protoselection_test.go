@@ -71,3 +71,20 @@ func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
 		t.Fatal("wrong result found", result)
 	}
 }
+
+func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
+	result, err := ProtoSelectNewServiceMethodPosition(queryProtoFile, SelectOptions{
+		"name": "Query",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.SourcePosition == nil {
+		t.Fatal("did not find message")
+	}
+
+	if result.SourcePosition.Line != 10 || result.SourcePosition.Col != 16 {
+		t.Fatal("wrong result found", result)
+	}
+}
