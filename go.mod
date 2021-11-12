@@ -33,6 +33,7 @@ require (
 	github.com/gorilla/rpc v1.2.0
 	github.com/iancoleman/strcase v0.1.3
 	github.com/imdario/mergo v0.3.11
+	github.com/jhump/protoreflect v1.8.2
 	github.com/jpillora/chisel v1.7.3
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
