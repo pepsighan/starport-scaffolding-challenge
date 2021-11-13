@@ -220,6 +220,9 @@ func protoQueryModify(replacer placeholder.Replacer, opts *typed.Options) genny.
 			return err
 		}
 
+		content := strings.ReplaceAll(f.String(), `
+import "gogoproto/gogo.proto";`, "")
+
 		// Import
 		templateImport := `
 import "gogoproto/gogo.proto";
@@ -228,8 +231,8 @@ import "%s/%s.proto";`
 			opts.ModuleName,
 			opts.TypeName.Snake,
 		)
-		content, err := clipper.PasteProtoSnippetAt(
-			f.String(),
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
 			replacementImport,

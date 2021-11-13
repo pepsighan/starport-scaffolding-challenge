@@ -40,7 +40,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.TypeName.Snake,
 		)
 		content, err = clipper.PasteProtoSnippetAt(
-			f.String(),
+			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
 			replacementProtoImport,
