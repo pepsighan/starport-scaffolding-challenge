@@ -127,7 +127,7 @@ func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) 
 		templateImport := `
 import "%[2]v/%[3]v.proto";`
 		replacementImport := fmt.Sprintf(templateImport, Placeholder, opts.ModuleName, opts.QueryName.Snake)
-		content, err := clipper.PasteProtoCodeAt(
+		content, err := clipper.PasteProtoSnippetAt(
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
 			nil,
@@ -155,7 +155,7 @@ import "%[2]v/%[3]v.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoCodeAt(
+		content, err = clipper.PasteProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -177,7 +177,7 @@ message QueryLast%[1]vIdRequest {}
 message QueryLast%[1]vIdResponse {int64 request_id = 1;}
 `
 		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoCodeAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
 		if err != nil {
 			return err
 		}
@@ -206,7 +206,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "%[1]v/%[2]v.proto";`
 		replacementImport := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-		content, err = clipper.PasteProtoCodeAt(
+		content, err = clipper.PasteProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
@@ -221,7 +221,7 @@ import "%[1]v/%[2]v.proto";`
 rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoCodeAt(
+		content, err = clipper.PasteProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -259,7 +259,7 @@ message Msg%[2]vDataResponse {
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content, err = clipper.PasteProtoCodeAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
 		if err != nil {
 			return err
 		}

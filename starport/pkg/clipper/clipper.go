@@ -7,16 +7,16 @@ import (
 // SnippetGenerator generates a snippet to be pasted based on the given data.
 type SnippetGenerator func(data map[string]interface{}) string
 
-// PasteProtoCodeAt pastes a proto snippet at the location pointed by the selector and returns a new code.
-func PasteProtoCodeAt(code string, selector ProtoPositionSelector, options SelectOptions, snippet string) (string, error) {
-	return PasteGeneratedProtoCodeAt(code, selector, options, func(_ map[string]interface{}) string {
+// PasteProtoSnippetAt pastes a proto snippet at the location pointed by the selector and returns a new code.
+func PasteProtoSnippetAt(code string, selector ProtoPositionSelector, options SelectOptions, snippet string) (string, error) {
+	return PasteGeneratedProtoSnippetAt(code, selector, options, func(_ map[string]interface{}) string {
 		return snippet
 	})
 }
 
-// PasteGeneratedProtoCodeAt pastes a generated proto snippet at the location pointed by the selector and returns
+// PasteGeneratedProtoSnippetAt pastes a generated proto snippet at the location pointed by the selector and returns
 // a new code.
-func PasteGeneratedProtoCodeAt(
+func PasteGeneratedProtoSnippetAt(
 	code string, selector ProtoPositionSelector, options SelectOptions, generator SnippetGenerator,
 ) (string, error) {
 	result, err := selector(code, options)

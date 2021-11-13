@@ -5,7 +5,7 @@ import (
 )
 
 func TestAddingProtoImport(t *testing.T) {
-	generated, err := PasteProtoCodeAt(
+	generated, err := PasteProtoSnippetAt(
 		genesisProtoFile,
 		ProtoSelectNewImportPosition,
 		nil,
@@ -33,7 +33,7 @@ message GenesisState {
 }
 
 func TestAddingImportAfterImports(t *testing.T) {
-	generated, err := PasteProtoCodeAt(
+	generated, err := PasteProtoSnippetAt(
 		queryProtoFile,
 		ProtoSelectNewImportPosition,
 		nil,
@@ -64,7 +64,7 @@ service Query {
 }
 
 func TestAddingMessageField(t *testing.T) {
-	generated, err := PasteProtoCodeAt(
+	generated, err := PasteProtoSnippetAt(
 		genesisProtoFile,
 		ProtoSelectNewMessageFieldPosition,
 		SelectOptions{
@@ -94,7 +94,7 @@ message GenesisState {
 }
 
 func TestAddingServiceMethod(t *testing.T) {
-	generated, err := PasteProtoCodeAt(
+	generated, err := PasteProtoSnippetAt(
 		queryProtoFile,
 		ProtoSelectNewServiceMethodPosition,
 		SelectOptions{
@@ -127,7 +127,7 @@ service Query {
 }
 
 func TestAddingOneOfField(t *testing.T) {
-	generated, err := PasteProtoCodeAt(
+	generated, err := PasteProtoSnippetAt(
 		packetProtoFile,
 		ProtoSelectNewOneOfFieldPosition,
 		SelectOptions{
