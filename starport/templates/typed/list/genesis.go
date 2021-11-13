@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/module"
 	"github.com/tendermint/starport/starport/templates/typed"
@@ -26,19 +27,36 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateProtoImport := `import "%[2]v/%[3]v.proto";
-%[1]v`
+		templateProtoImport := `
+import "%[1]v/%[2]v.proto";`
 		replacementProtoImport := fmt.Sprintf(
 			templateProtoImport,
-			typed.PlaceholderGenesisProtoImport,
 			opts.ModuleName,
 			opts.TypeName.Snake,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisProtoImport, replacementProtoImport)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			replacementProtoImport,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Add gogo.proto
-		replacementGogoImport := typed.EnsureGogoProtoImported(path, typed.PlaceholderGenesisProtoImport)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoImport, replacementGogoImport)
+		replacementGogoImport := typed.EnsureGogoProtoImported(path)
+		if replacementGogoImport != "" {
+			content, err = clipper.PasteProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				replacementGogoImport,
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Parse proto file to determine the field numbers
 		highestNumber, err := typed.GenesisStateHighestFieldNumber(path)
@@ -46,18 +64,28 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateProtoState := `repeated %[2]v %[3]vList = %[4]v [(gogoproto.nullable) = false];
-  uint64 %[3]vCount = %[5]v;
-  %[1]v`
+		templateProtoState := `
+  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
+  uint64 %[2]vCount = %[4]v;
+`
 		replacementProtoState := fmt.Sprintf(
 			templateProtoState,
-			typed.PlaceholderGenesisProtoState,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
 			highestNumber+1,
 			highestNumber+2,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, replacementProtoState)
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewMessageFieldPosition,
+			clipper.SelectOptions{
+				"name": "GenesisState",
+			},
+			replacementProtoState,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
