@@ -124,45 +124,62 @@ func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) 
 		}
 
 		// Import the type
-		templateImport := `import "%[2]v/%[3]v.proto";
-%[1]v`
+		templateImport := `
+import "%[2]v/%[3]v.proto";`
 		replacementImport := fmt.Sprintf(templateImport, Placeholder, opts.ModuleName, opts.QueryName.Snake)
-		content := replacer.Replace(f.String(), Placeholder, replacementImport)
+		content, err := clipper.PasteProtoCodeAt(
+			f.String(),
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			replacementImport,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Add the service
 		templateService := `
-  	// %[2]vResult defines a rpc handler method for Msg%[2]vData.
-  	rpc %[2]vResult(Query%[2]vRequest) returns (Query%[2]vResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/%[3]v_result/{request_id}";
+  	// %[1]vResult defines a rpc handler method for Msg%[1]vData.
+  	rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
+		option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
   	}
 
-  	// Last%[2]vId query the last %[2]v result id
-  	rpc Last%[2]vId(QueryLast%[2]vIdRequest) returns (QueryLast%[2]vIdResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/last_%[3]v_id";
-  	}
-%[1]v`
-		replacementService := fmt.Sprintf(templateService, Placeholder2,
+  	// Last%[1]vId query the last %[1]v result id
+  	rpc Last%[1]vId(QueryLast%[1]vIdRequest) returns (QueryLast%[1]vIdResponse) {
+		option (google.api.http).get = "/%[3]v/%[4]v/last_%[2]v_id";
+  	}`
+		replacementService := fmt.Sprintf(templateService,
 			opts.QueryName.UpperCamel,
 			opts.QueryName.Snake,
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, Placeholder2, replacementService)
+		content, err = clipper.PasteProtoCodeAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Query",
+			},
+			replacementService,
+		)
 
 		// Add the service messages
-		templateMessage := `message Query%[2]vRequest {int64 request_id = 1;}
+		templateMessage := `
+message Query%[1]vRequest {int64 request_id = 1;}
 
-message Query%[2]vResponse {
-  %[2]vResult result = 1;
+message Query%[1]vResponse {
+  %[1]vResult result = 1;
 }
 
-message QueryLast%[2]vIdRequest {}
+message QueryLast%[1]vIdRequest {}
 
-message QueryLast%[2]vIdResponse {int64 request_id = 1;}
-
-%[1]v`
-		replacementMessage := fmt.Sprintf(templateMessage, Placeholder3, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, Placeholder3, replacementMessage)
+message QueryLast%[1]vIdResponse {int64 request_id = 1;}
+`
+		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteProtoCodeAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
