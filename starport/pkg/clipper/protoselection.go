@@ -113,7 +113,7 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 )
 
 // ProtoSelectLastPosition selects the last position within the code.
-func ProtoSelectLastPosition(code string) (*ProtoPositionSelectorResult, error) {
+func ProtoSelectLastPosition(code string, _ SelectOptions) (*ProtoPositionSelectorResult, error) {
 	parsedAST, err := parseProto(code)
 	if err != nil {
 		return nil, err
