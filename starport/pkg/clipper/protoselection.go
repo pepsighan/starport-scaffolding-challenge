@@ -8,6 +8,8 @@ type SelectOptions map[string]string
 // ProtoPositionSelectorResult contains position in code after a successful selection.
 type ProtoPositionSelectorResult struct {
 	SourcePosition *ast.SourcePos
+	// Any additional piece of data collected during a selection.
+	Data map[string]interface{}
 }
 
 // ProtoPositionSelector is a configurable selector which can select a position in code.
@@ -104,6 +106,9 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 					// If the oneof type's name matches then this is it. Select the position just before the ending
 					// brace.
 					result.SourcePosition = n.CloseBrace.Start()
+					result.Data = map[string]interface{}{
+						"count": len(n.Decls),
+					}
 				}
 			}
 
