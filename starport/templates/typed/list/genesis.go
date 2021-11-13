@@ -58,30 +58,27 @@ import "%[1]v/%[2]v.proto";`
 			}
 		}
 
-		// Parse proto file to determine the field numbers
-		highestNumber, err := typed.GenesisStateHighestFieldNumber(path)
-		if err != nil {
-			return err
-		}
-
 		templateProtoState := `
   repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
   uint64 %[2]vCount = %[4]v;
 `
-		replacementProtoState := fmt.Sprintf(
-			templateProtoState,
-			opts.TypeName.UpperCamel,
-			opts.TypeName.LowerCamel,
-			highestNumber+1,
-			highestNumber+2,
-		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
 			clipper.SelectOptions{
 				"name": "GenesisState",
 			},
-			replacementProtoState,
+			func(data map[string]interface{}) string {
+				highestNumber := data["highestFieldNumber"].(int)
+
+				return fmt.Sprintf(
+					templateProtoState,
+					opts.TypeName.UpperCamel,
+					opts.TypeName.LowerCamel,
+					highestNumber+1,
+					highestNumber+2,
+				)
+			},
 		)
 		if err != nil {
 			return err
