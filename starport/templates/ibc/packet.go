@@ -194,13 +194,13 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 				"oneOfName":   "packet",
 			},
 			func(data map[string]interface{}) string {
-				count := data["count"].(int)
+				fieldNumber := data["highestFieldNumber"].(int)
 
 				return fmt.Sprintf(
 					templateField,
 					opts.PacketName.UpperCamel,
 					opts.PacketName.LowerCamel,
-					count+1,
+					fieldNumber+1,
 				)
 			},
 		)
