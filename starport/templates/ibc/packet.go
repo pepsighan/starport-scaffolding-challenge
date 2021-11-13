@@ -184,8 +184,8 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		content := f.String()
 
 		// Add the fld in the module packet
-		templateField := `
-				%[1]vPacketData %[2]vPacket = %[3]v;`
+		templateField := `  %[1]vPacketData %[2]vPacket = %[3]v;
+  `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewOneOfFieldPosition,
@@ -243,14 +243,15 @@ import "%[1]v";`, f)
 			}
 		}
 
-		templateMessage := `// %[1]vPacketData defines a struct for the packet payload
+		templateMessage := `
+
+// %[1]vPacketData defines a struct for the packet payload
 message %[1]vPacketData {
 %[2]v}
 
 // %[1]vPacketAck defines a struct for the packet acknowledgment
 message %[1]vPacketAck {
-	%[3]v}
-`
+%[3]v}`
 		replacementMessage := fmt.Sprintf(
 			templateMessage,
 			opts.PacketName.UpperCamel,
@@ -299,8 +300,7 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 		}
 
 		// RPC
-		templateRPC := `
-  rpc Send%[1]v(MsgSend%[1]v) returns (MsgSend%[1]vResponse);
+		templateRPC := `  rpc Send%[1]v(MsgSend%[1]v) returns (MsgSend%[1]vResponse);
 `
 		replacementRPC := fmt.Sprintf(
 			templateRPC,
@@ -346,6 +346,7 @@ import "%[1]v";`, f)
 		// This addition would include using the type ibc.core.client.v1.Height
 		// Ex: https://github.com/cosmos/cosmos-sdk/blob/816306b85addae6350bd380997f2f4bf9dce9471/proto/ibc/applications/transfer/v1/tx.proto
 		templateMessage := `
+
 message MsgSend%[1]v {
   string %[2]v = 1;
   string port = 2;
