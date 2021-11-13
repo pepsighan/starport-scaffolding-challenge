@@ -139,15 +139,16 @@ import "%[2]v/%[3]v.proto";`
 
 		// Add the service
 		templateService := `
-  	// %[1]vResult defines a rpc handler method for Msg%[1]vData.
-  	rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
-		option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
-  	}
+  // %[1]vResult defines a rpc handler method for Msg%[1]vData.
+  rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
+    option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
+  }
 
-  	// Last%[1]vId query the last %[1]v result id
-  	rpc Last%[1]vId(QueryLast%[1]vIdRequest) returns (QueryLast%[1]vIdResponse) {
-		option (google.api.http).get = "/%[3]v/%[4]v/last_%[2]v_id";
-  	}`
+  // Last%[1]vId query the last %[1]v result id
+  rpc Last%[1]vId(QueryLast%[1]vIdRequest) returns (QueryLast%[1]vIdResponse) {
+    option (google.api.http).get = "/%[3]v/%[4]v/last_%[2]v_id";
+  }
+`
 		replacementService := fmt.Sprintf(templateService,
 			opts.QueryName.UpperCamel,
 			opts.QueryName.Snake,
@@ -217,7 +218,8 @@ import "%[1]v/%[2]v.proto";`
 
 		// RPC
 		templateRPC := `
-  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);`
+rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
+`
 		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
 		content, err = clipper.PasteProtoCodeAt(
 			content,
