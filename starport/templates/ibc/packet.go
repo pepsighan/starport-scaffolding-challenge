@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
@@ -182,29 +183,40 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 
 		content := f.String()
 
-		// Add the field in the module packet
-		fieldCount := strings.Count(content, PlaceholderIBCPacketProtoFieldNumber)
-		templateField := `%[1]v
-				%[2]vPacketData %[3]vPacket = %[4]v; %[5]v`
-		replacementField := fmt.Sprintf(
-			templateField,
-			PlaceholderIBCPacketProtoField,
-			opts.PacketName.UpperCamel,
-			opts.PacketName.LowerCamel,
-			fieldCount+2,
-			PlaceholderIBCPacketProtoFieldNumber,
+		// Add the fld in the module packet
+		templateField := `
+				%[1]vPacketData %[2]vPacket = %[3]v;`
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewOneOfFieldPosition,
+			clipper.SelectOptions{
+				"messageName": fmt.Sprintf("%vPacketData", strings.Title(opts.ModuleName)),
+				"oneOfName":   "packet",
+			},
+			func(data map[string]interface{}) string {
+				count := data["count"].(int)
+
+				return fmt.Sprintf(
+					templateField,
+					opts.PacketName.UpperCamel,
+					opts.PacketName.LowerCamel,
+					count+1,
+				)
+			},
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketProtoField, replacementField)
+		if err != nil {
+			return err
+		}
 
 		// Add the message definition for packet and acknowledgment
 		var packetFields string
-		for i, field := range opts.Fields {
-			packetFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+1))
+		for i, fld := range opts.Fields {
+			packetFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+1))
 		}
 
 		var ackFields string
-		for i, field := range opts.AckFields {
-			ackFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+1))
+		for i, fld := range opts.AckFields {
+			ackFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+1))
 		}
 
 		// Ensure custom types are imported
@@ -220,26 +232,35 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", PlaceholderProtoPacketImport, importModule)
-			content = replacer.Replace(content, PlaceholderProtoPacketImport, replacementImport)
+			content, err = clipper.PasteProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				importModule,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		templateMessage := `// %[2]vPacketData defines a struct for the packet payload
-message %[2]vPacketData {
-%[3]v}
+		templateMessage := `// %[1]vPacketData defines a struct for the packet payload
+message %[1]vPacketData {
+%[2]v}
 
-// %[2]vPacketAck defines a struct for the packet acknowledgment
-message %[2]vPacketAck {
-	%[4]v}
-%[1]v`
+// %[1]vPacketAck defines a struct for the packet acknowledgment
+message %[1]vPacketAck {
+	%[3]v}
+`
 		replacementMessage := fmt.Sprintf(
 			templateMessage,
-			PlaceholderIBCPacketProtoMessage,
 			opts.PacketName.UpperCamel,
 			packetFields,
 			ackFields,
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketProtoMessage, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -288,8 +309,8 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 		content := replacer.Replace(f.String(), PlaceholderProtoTxRPC, replacementRPC)
 
 		var sendFields string
-		for i, field := range opts.Fields {
-			sendFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+5))
+		for i, fld := range opts.Fields {
+			sendFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+5))
 		}
 
 		// Ensure custom types are imported
