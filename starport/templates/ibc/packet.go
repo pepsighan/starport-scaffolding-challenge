@@ -299,14 +299,24 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 		}
 
 		// RPC
-		templateRPC := `  rpc Send%[2]v(MsgSend%[2]v) returns (MsgSend%[2]vResponse);
-%[1]v`
+		templateRPC := `
+  rpc Send%[1]v(MsgSend%[1]v) returns (MsgSend%[1]vResponse);
+`
 		replacementRPC := fmt.Sprintf(
 			templateRPC,
-			PlaceholderProtoTxRPC,
 			opts.PacketName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), PlaceholderProtoTxRPC, replacementRPC)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacementRPC,
+		)
+		if err != nil {
+			return err
+		}
 
 		var sendFields string
 		for i, fld := range opts.Fields {
@@ -325,32 +335,37 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", PlaceholderProtoTxImport, importModule)
-			content = replacer.Replace(content, PlaceholderProtoTxImport, replacementImport)
+			content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectNewImportPosition, nil, importModule)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Message
 		// TODO: Include timestamp height
 		// This addition would include using the type ibc.core.client.v1.Height
 		// Ex: https://github.com/cosmos/cosmos-sdk/blob/816306b85addae6350bd380997f2f4bf9dce9471/proto/ibc/applications/transfer/v1/tx.proto
-		templateMessage := `message MsgSend%[2]v {
-  string %[3]v = 1;
+		templateMessage := `
+message MsgSend%[1]v {
+  string %[2]v = 1;
   string port = 2;
   string channelID = 3;
   uint64 timeoutTimestamp = 4;
-%[4]v}
+%[3]v}
 
-message MsgSend%[2]vResponse {
+message MsgSend%[1]vResponse {
 }
-%[1]v`
+`
 		replacementMessage := fmt.Sprintf(
 			templateMessage,
-			PlaceholderProtoTxMessage,
 			opts.PacketName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content = replacer.Replace(content, PlaceholderProtoTxMessage, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
