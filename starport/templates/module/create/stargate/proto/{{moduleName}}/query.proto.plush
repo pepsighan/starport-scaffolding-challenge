@@ -5,6 +5,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "<%= moduleName %>/params.proto";
+// this line is used by starport scaffolding # 1
 
 option go_package = "<%= modulePath %>/x/<%= moduleName %>/types";
 
@@ -14,6 +15,7 @@ service Query {
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/<%= formatOwnerName(ownerName) %>/<%= appName %>/<%= moduleName %>/params";
   }
+  // this line is used by starport scaffolding # 2
 }
 
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -25,3 +27,4 @@ message QueryParamsResponse {
   Params params = 1 [(gogoproto.nullable) = false];
 }
 
+// this line is used by starport scaffolding # 3
