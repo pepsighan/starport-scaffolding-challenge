@@ -3,6 +3,7 @@ package list
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
 	"github.com/tendermint/starport/starport/pkg/clipper"
@@ -27,14 +28,18 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
+		content := strings.ReplaceAll(f.String(), `
+import "gogoproto/gogo.proto";`, "")
+
 		templateProtoImport := `
+import "gogoproto/gogo.proto";
 import "%[1]v/%[2]v.proto";`
 		replacementProtoImport := fmt.Sprintf(
 			templateProtoImport,
 			opts.ModuleName,
 			opts.TypeName.Snake,
 		)
-		content, err := clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteProtoSnippetAt(
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
 			nil,
@@ -42,20 +47,6 @@ import "%[1]v/%[2]v.proto";`
 		)
 		if err != nil {
 			return err
-		}
-
-		// Add gogo.proto
-		replacementGogoImport := typed.EnsureGogoProtoImported(path)
-		if replacementGogoImport != "" {
-			content, err = clipper.PasteProtoSnippetAt(
-				content,
-				clipper.ProtoSelectNewImportPosition,
-				nil,
-				replacementGogoImport,
-			)
-			if err != nil {
-				return err
-			}
 		}
 
 		templateProtoState := `
