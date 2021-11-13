@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/typed"
@@ -63,12 +64,21 @@ func protoTxRPCModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 		if err != nil {
 			return err
 		}
-		template := `  rpc %[2]v(Msg%[2]v) returns (Msg%[2]vResponse);
-%[1]v`
-		replacement := fmt.Sprintf(template, PlaceholderProtoTxRPC,
-			opts.MsgName.UpperCamel,
+		template := `  rpc %[1]v(Msg%[1]v) returns (Msg%[1]vResponse);
+`
+		replacement := fmt.Sprintf(template, opts.MsgName.UpperCamel)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacement,
 		)
-		content := replacer.Replace(f.String(), PlaceholderProtoTxRPC, replacement)
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
@@ -91,22 +101,29 @@ func protoTxMessageModify(replacer placeholder.Replacer, opts *Options) genny.Ru
 			resFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+1))
 		}
 
-		template := `message Msg%[2]v {
-  string %[5]v = 1;
-%[3]v}
+		template := `
 
-message Msg%[2]vResponse {
-%[4]v}
+message Msg%[1]v {
+  string %[4]v = 1;
+%[2]v}
 
-%[1]v`
+message Msg%[1]vResponse {
+%[3]v}`
 		replacement := fmt.Sprintf(template,
-			PlaceholderProtoTxMessage,
 			opts.MsgName.UpperCamel,
 			msgFields,
 			resFields,
 			opts.MsgSigner.LowerCamel,
 		)
-		content := replacer.Replace(f.String(), PlaceholderProtoTxMessage, replacement)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacement,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Ensure custom types are imported
 		protoImports := append(opts.ResFields.ProtoImports(), opts.Fields.ProtoImports()...)
@@ -120,9 +137,15 @@ message Msg%[2]vResponse {
 			importModule := fmt.Sprintf(`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
-
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", typed.PlaceholderProtoTxImport, importModule)
-			content = replacer.Replace(content, typed.PlaceholderProtoTxImport, replacementImport)
+			content, err = clipper.PasteProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				importModule,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		newFile := genny.NewFileS(path, content)
