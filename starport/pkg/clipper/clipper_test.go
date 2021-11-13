@@ -70,7 +70,7 @@ func TestAddingMessageField(t *testing.T) {
 		SelectOptions{
 			"name": "GenesisState",
 		},
-		"\n  required string query = 1;",
+		"  required string query = 1;\n",
 	)
 
 	if err != nil {
@@ -84,8 +84,8 @@ option go_package = "github.com/cosmonaut/mars/x/mars/types";
 
 // GenesisState defines the mars module's genesis state.
 message GenesisState {
-  required string query = 1;
 
+  required string query = 1;
 }`
 
 	if generated != correct {
@@ -100,7 +100,7 @@ func TestAddingServiceMethod(t *testing.T) {
 		SelectOptions{
 			"name": "Query",
 		},
-		"\n  rpc Search(SearchRequest) returns (SearchResponse);",
+		"  rpc Search(SearchRequest) returns (SearchResponse);\n",
 	)
 
 	if err != nil {
@@ -117,8 +117,8 @@ option go_package = "github.com/cosmonaut/mars/x/mars/types";
 
 // Query defines the gRPC query service.
 service Query {
-  rpc Search(SearchRequest) returns (SearchResponse);
 
+  rpc Search(SearchRequest) returns (SearchResponse);
 }`
 
 	if generated != correct {

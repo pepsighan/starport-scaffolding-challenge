@@ -60,7 +60,7 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(
 			if n, ok := node.(*ast.MessageNode); ok {
 				if n.Name.Val == options["name"] {
 					// If the message's name matches then we are on the correct one.
-					result.SourcePosition = n.OpenBrace.End()
+					result.SourcePosition = n.CloseBrace.Start()
 				}
 			}
 
@@ -76,7 +76,7 @@ var ProtoSelectNewServiceMethodPosition = wrapFinder(
 			if n, ok := node.(*ast.ServiceNode); ok {
 				if n.Name.Val == options["name"] {
 					// If the message's name matches then we are on the correct one.
-					result.SourcePosition = n.OpenBrace.End()
+					result.SourcePosition = n.CloseBrace.Start()
 				}
 			}
 

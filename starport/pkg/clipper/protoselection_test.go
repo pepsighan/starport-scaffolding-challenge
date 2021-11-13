@@ -82,7 +82,7 @@ func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 7 || result.SourcePosition.Col != 23 {
+	if result.SourcePosition.Line != 9 || result.SourcePosition.Col != 1 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -99,7 +99,7 @@ func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 10 || result.SourcePosition.Col != 16 {
+	if result.SourcePosition.Line != 12 || result.SourcePosition.Col != 1 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -119,7 +119,7 @@ func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
 }
 
 func TestProtoSelectLastPosition(t *testing.T) {
-	result, err := ProtoSelectLastPosition(queryProtoFile)
+	result, err := ProtoSelectLastPosition(queryProtoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
