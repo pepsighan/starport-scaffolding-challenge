@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
@@ -182,27 +183,46 @@ import "gogoproto/gogo.proto";`, "")
 import "cosmos/base/v1beta1/coin.proto";`, "")
 
 		// Import
-		templateImport := `import "gogoproto/gogo.proto";
+		templateImport := `
+import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "%[2]v/%[3]v.proto";
-%[1]v`
-		replacementImport := fmt.Sprintf(templateImport, PlaceholderProtoTxImport, opts.ModuleName, opts.QueryName.Snake)
-		content = replacer.Replace(content, PlaceholderProtoTxImport, replacementImport)
+import "%[1]v/%[2]v.proto";`
+		replacementImport := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+		content, err = clipper.PasteProtoCodeAt(
+			content,
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			replacementImport,
+		)
+		if err != nil {
+			return err
+		}
 
 		// RPC
-		templateRPC := `  rpc %[2]vData(Msg%[2]vData) returns (Msg%[2]vDataResponse);
-%[1]v`
-		replacementRPC := fmt.Sprintf(templateRPC, PlaceholderProtoTxRPC, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, PlaceholderProtoTxRPC, replacementRPC)
+		templateRPC := `
+  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);`
+		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteProtoCodeAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacementRPC,
+		)
+		if err != nil {
+			return err
+		}
 
-		templateMessage := `message Msg%[2]vData {
-  string %[3]v = 1;
+		templateMessage := `
+message Msg%[1]vData {
+  string %[2]v = 1;
   uint64 oracle_script_id = 2 [
     (gogoproto.customname) = "OracleScriptID",
     (gogoproto.moretags) = "yaml:\"oracle_script_id\""
   ];
   string source_channel = 3;
-  %[2]vCallData calldata = 4;
+  %[1]vCallData calldata = 4;
   uint64 ask_count = 5;
   uint64 min_count = 6;
   repeated cosmos.base.v1beta1.Coin fee_limit = 7 [
@@ -215,14 +235,15 @@ import "%[2]v/%[3]v.proto";
 }
 
 message Msg%[2]vDataResponse {
-}
-
-%[1]v`
-		replacementMessage := fmt.Sprintf(templateMessage, PlaceholderProtoTxMessage,
+}`
+		replacementMessage := fmt.Sprintf(templateMessage,
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content = replacer.Replace(content, PlaceholderProtoTxMessage, replacementMessage)
+		content, err = clipper.PasteProtoCodeAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
