@@ -1,6 +1,8 @@
 package clipper
 
-import "github.com/jhump/protoreflect/desc/protoparse/ast"
+import (
+	"github.com/jhump/protoreflect/desc/protoparse/ast"
+)
 
 // SelectOptions are the options needed to configure a particular selector.
 type SelectOptions map[string]string
@@ -63,6 +65,22 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(
 				if n.Name.Val == options["name"] {
 					// If the message's name matches then we are on the correct one.
 					result.SourcePosition = n.CloseBrace.Start()
+
+					// Get the highest field number so that new additions can have the next value.
+					highestFieldNumber := 0
+					for _, decl := range n.Decls {
+						switch d := decl.(type) {
+						case *ast.FieldNode:
+							v := int(d.Tag.Val)
+							if v > highestFieldNumber {
+								highestFieldNumber = v
+							}
+						}
+					}
+
+					result.Data = map[string]interface{}{
+						"highestFieldNumber": highestFieldNumber,
+					}
 				}
 			}
 
@@ -106,8 +124,21 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 					// If the oneof type's name matches then this is it. Select the position just before the ending
 					// brace.
 					result.SourcePosition = n.CloseBrace.Start()
+
+					// Get the highest field number so that new additions can have the next value.
+					highestFieldNumber := 0
+					for _, decl := range n.Decls {
+						switch d := decl.(type) {
+						case *ast.FieldNode:
+							v := int(d.Tag.Val)
+							if v > highestFieldNumber {
+								highestFieldNumber = v
+							}
+						}
+					}
+
 					result.Data = map[string]interface{}{
-						"count": len(n.Decls),
+						"highestFieldNumber": highestFieldNumber,
 					}
 				}
 			}
