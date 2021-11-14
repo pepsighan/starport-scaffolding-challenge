@@ -56,8 +56,7 @@ import "%[1]v/%[2]v.proto";`
 			return err
 		}
 
-		templateProtoState := `
-  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
+		templateProtoState := `  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
   uint64 %[2]vCount = %[4]v;
 `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(

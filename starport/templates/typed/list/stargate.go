@@ -134,8 +134,7 @@ import "%s/%s.proto";`
 		}
 
 		// RPC service
-		templateRPC := `
-  rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
+		templateRPC := `  rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
   rpc Update%[1]v(MsgUpdate%[1]v) returns (MsgUpdate%[1]vResponse);
   rpc Delete%[1]v(MsgDelete%[1]v) returns (MsgDelete%[1]vResponse);
 `
@@ -268,7 +267,6 @@ import "%s/%s.proto";`
 
 		// RPC service
 		templateRPC := `
-
   // Queries a %[2]v by id.
 	rpc %[1]v(QueryGet%[1]vRequest) returns (QueryGet%[1]vResponse) {
 		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v/{id}";
@@ -277,7 +275,8 @@ import "%s/%s.proto";`
 	// Queries a list of %[2]v items.
 	rpc %[1]vAll(QueryAll%[1]vRequest) returns (QueryAll%[1]vResponse) {
 		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
-	}`
+	}
+`
 		replacementRPC := fmt.Sprintf(templateRPC,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
