@@ -184,7 +184,7 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 		content := f.String()
 
 		// Add the fld in the module packet
-		templateField := `  %[1]vPacketData %[2]vPacket = %[3]v;
+		templateField := `%[1]vPacketData %[2]vPacket = %[3]v;
   `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
