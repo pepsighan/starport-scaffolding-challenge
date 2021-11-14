@@ -26,7 +26,7 @@ func NewIBC(replacer placeholder.Replacer, opts *CreateOptions) (*genny.Generato
 
 	g.RunFn(genesisModify(replacer, opts))
 	g.RunFn(genesisTypesModify(replacer, opts))
-	g.RunFn(genesisProtoModify(replacer, opts))
+	g.RunFn(genesisProtoModify(opts))
 	g.RunFn(keysModify(replacer, opts))
 
 	if err := g.Box(template); err != nil {
@@ -118,7 +118,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 	}
 }
 
-func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func genesisProtoModify(opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)

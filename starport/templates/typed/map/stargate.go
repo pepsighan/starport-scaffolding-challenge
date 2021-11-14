@@ -65,10 +65,10 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 		)
 	)
 
-	g.RunFn(protoRPCModify(replacer, opts))
+	g.RunFn(protoRPCModify(opts))
 	g.RunFn(moduleGRPCGatewayModify(replacer, opts))
 	g.RunFn(clientCliQueryModify(replacer, opts))
-	g.RunFn(genesisProtoModify(replacer, opts))
+	g.RunFn(genesisProtoModify(opts))
 	g.RunFn(genesisTypesModify(replacer, opts))
 	g.RunFn(genesisModuleModify(replacer, opts))
 	g.RunFn(genesisTestsModify(replacer, opts))
@@ -76,7 +76,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 
 	// Modifications for new messages
 	if !opts.NoMessage {
-		g.RunFn(protoTxModify(replacer, opts))
+		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerModify(replacer, opts))
 		g.RunFn(clientCliTxModify(replacer, opts))
 		g.RunFn(typesCodecModify(replacer, opts))
@@ -100,7 +100,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 	return g, typed.Box(componentTemplate, opts, g)
 }
 
-func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoRPCModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -260,7 +260,7 @@ func clientCliQueryModify(replacer placeholder.Replacer, opts *typed.Options) ge
 	}
 }
 
-func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func genesisProtoModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)
@@ -512,7 +512,7 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoTxModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)

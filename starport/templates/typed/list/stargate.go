@@ -39,7 +39,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 		)
 	)
 
-	g.RunFn(protoQueryModify(replacer, opts))
+	g.RunFn(protoQueryModify(opts))
 	g.RunFn(moduleGRPCGatewayModify(replacer, opts))
 	g.RunFn(typesKeyModify(opts))
 	g.RunFn(clientCliQueryModify(replacer, opts))
@@ -50,7 +50,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 	if !opts.NoMessage {
 		// Modifications for new messages
 		g.RunFn(handlerModify(replacer, opts))
-		g.RunFn(protoTxModify(replacer, opts))
+		g.RunFn(protoTxModify(opts))
 		g.RunFn(typesCodecModify(replacer, opts))
 		g.RunFn(clientCliTxModify(replacer, opts))
 		g.RunFn(moduleSimulationModify(replacer, opts))
@@ -101,7 +101,7 @@ func handlerModify(replacer placeholder.Replacer, opts *typed.Options) genny.Run
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoTxModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -212,7 +212,7 @@ message MsgDelete%[1]vResponse {}`
 	}
 }
 
-func protoQueryModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoQueryModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)

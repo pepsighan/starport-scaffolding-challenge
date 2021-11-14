@@ -17,8 +17,8 @@ func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator
 	g := genny.New()
 
 	g.RunFn(handlerModify(replacer, opts))
-	g.RunFn(protoTxRPCModify(replacer, opts))
-	g.RunFn(protoTxMessageModify(replacer, opts))
+	g.RunFn(protoTxRPCModify(opts))
+	g.RunFn(protoTxMessageModify(opts))
 	g.RunFn(typesCodecModify(replacer, opts))
 	g.RunFn(clientCliTxModify(replacer, opts))
 	g.RunFn(moduleSimulationModify(replacer, opts))
@@ -57,7 +57,7 @@ func handlerModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
 	}
 }
 
-func protoTxRPCModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func protoTxRPCModify(opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -84,7 +84,7 @@ func protoTxRPCModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 	}
 }
 
-func protoTxMessageModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func protoTxMessageModify(opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)

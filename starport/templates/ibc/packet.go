@@ -60,7 +60,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 
 	// Add the component
 	g.RunFn(moduleModify(replacer, opts))
-	g.RunFn(protoModify(replacer, opts))
+	g.RunFn(protoModify(opts))
 	g.RunFn(eventModify(replacer, opts))
 	if err := g.Box(componentTemplate); err != nil {
 		return g, err
@@ -68,7 +68,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 
 	// Add the send message
 	if !opts.NoMessage {
-		g.RunFn(protoTxModify(replacer, opts))
+		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerTxModify(replacer, opts))
 		g.RunFn(clientCliTxModify(replacer, opts))
 		g.RunFn(codecModify(replacer, opts))
@@ -173,7 +173,7 @@ func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunF
 	}
 }
 
-func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoModify(opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "packet.proto")
 		f, err := r.Disk.Find(path)
@@ -291,7 +291,7 @@ func eventModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoTxModify(opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)

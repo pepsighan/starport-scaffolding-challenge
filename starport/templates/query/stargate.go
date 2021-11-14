@@ -22,13 +22,13 @@ func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator
 		)
 	)
 
-	g.RunFn(protoQueryModify(replacer, opts))
+	g.RunFn(protoQueryModify(opts))
 	g.RunFn(cliQueryModify(replacer, opts))
 
 	return g, Box(template, opts, g)
 }
 
-func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func protoQueryModify(opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)

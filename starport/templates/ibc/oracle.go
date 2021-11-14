@@ -41,8 +41,8 @@ func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Gener
 	template := xgenny.NewEmbedWalker(fsOracle, "oracle/", opts.AppPath)
 
 	g.RunFn(moduleOracleModify(replacer, opts))
-	g.RunFn(protoQueryOracleModify(replacer, opts))
-	g.RunFn(protoTxOracleModify(replacer, opts))
+	g.RunFn(protoQueryOracleModify(opts))
+	g.RunFn(protoTxOracleModify(opts))
 	g.RunFn(handlerTxOracleModify(replacer, opts))
 	g.RunFn(clientCliQueryOracleModify(replacer, opts))
 	g.RunFn(clientCliTxOracleModify(replacer, opts))
@@ -115,7 +115,7 @@ func moduleOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genn
 	}
 }
 
-func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoQueryOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -189,7 +189,7 @@ message QueryLast%[1]vIdResponse {int64 request_id = 1;}
 	}
 }
 
-func protoTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoTxOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
