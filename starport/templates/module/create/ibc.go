@@ -137,7 +137,7 @@ func genesisProtoModify(opts *CreateOptions) genny.RunFn {
 			},
 			func(data map[string]interface{}) string {
 				highestNumber := data["highestFieldNumber"].(int)
-				return fmt.Sprintf(snippet, highestNumber)
+				return fmt.Sprintf(snippet, highestNumber+1)
 			},
 		)
 
