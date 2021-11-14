@@ -135,7 +135,7 @@ import "%[1]v/%[2]v.proto";`
 
 				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 				if shouldAddNewLine {
-					return fmt.Sprintf(`\n%v`, importString)
+					return fmt.Sprintf("\n%v", importString)
 				}
 				return importString
 			},
@@ -220,7 +220,7 @@ import "%[1]v/%[2]v.proto";`
 				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
 				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 				if shouldAddNewLine {
-					return fmt.Sprintf(`\n%v`, importString)
+					return fmt.Sprintf("\n%v", importString)
 				}
 				return importString
 			},

@@ -238,7 +238,7 @@ import "%[1]v";`, f)
 				func(data interface{}) string {
 					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 					if shouldAddNewLine {
-						return fmt.Sprintf(`\n%v`, importModule)
+						return fmt.Sprintf("\n%v", importModule)
 					}
 					return importModule
 				},
@@ -347,7 +347,7 @@ import "%[1]v";`, f)
 				func(data interface{}) string {
 					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 					if shouldAddNewLine {
-						return fmt.Sprintf(`\n%v`, importModule)
+						return fmt.Sprintf("\n%v", importModule)
 					}
 					return importModule
 				},

@@ -124,7 +124,7 @@ import "%s/%s.proto";`
 				)
 				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 				if shouldAddNewLine {
-					return fmt.Sprintf(`\n%v`, importString)
+					return fmt.Sprintf("\n%v", importString)
 				}
 				return importString
 			},
@@ -181,7 +181,7 @@ import "%[1]v";`, f)
 				func(data interface{}) string {
 					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 					if shouldAddNewLine {
-						return fmt.Sprintf(`\n%v`, importModule)
+						return fmt.Sprintf("\n%v", importModule)
 					}
 					return importModule
 				},
@@ -257,7 +257,7 @@ import "%s/%s.proto";`
 				)
 				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
 				if shouldAddNewLine {
-					return fmt.Sprintf(`\n%v`, importString)
+					return fmt.Sprintf("\n%v", importString)
 				}
 				return importString
 			},
