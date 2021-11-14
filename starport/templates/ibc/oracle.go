@@ -126,12 +126,13 @@ func protoQueryOracleModify(opts *OracleOptions) genny.RunFn {
 		// Import the type
 		templateImport := `
 import "%[1]v/%[2]v.proto";`
-		replacementImport := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-		content, err := clipper.PasteProtoSnippetAt(
+		content, err := clipper.PasteGeneratedProtoSnippetAt(
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			replacementImport,
+			func(data map[string]interface{}) string {
+				return fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+			},
 		)
 		if err != nil {
 			return err

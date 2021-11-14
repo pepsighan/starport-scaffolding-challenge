@@ -11,7 +11,22 @@ type SelectOptions map[string]string
 type ProtoPositionSelectorResult struct {
 	SourcePosition *ast.SourcePos
 	// Any additional piece of data collected during a selection.
-	Data map[string]interface{}
+	Data interface{}
+}
+
+// ProtoNewImportPositionData stores data collected during a selection of new import position.
+type ProtoNewImportPositionData struct {
+	ShouldAddNewLine bool
+}
+
+// ProtoNewMessageFieldPositionData stores data collected during a selection of a new message field position.
+type ProtoNewMessageFieldPositionData struct {
+	HighestFieldNumber uint64
+}
+
+// ProtoNewOneOfFieldPositionData stores data collected during a selection of new oneof field position.
+type ProtoNewOneOfFieldPositionData struct {
+	HighestFieldNumber uint64
 }
 
 // ProtoPositionSelector is a configurable selector which can select a position in code.
@@ -49,13 +64,13 @@ var ProtoSelectNewImportPosition = wrapFinder(
 			case *ast.PackageNode:
 				result.SourcePosition = n.End()
 				// The incoming imports require an extra new line after package declaration.
-				result.Data = map[string]interface{}{
-					"shouldAddNewLine": true,
+				result.Data = ProtoNewImportPositionData{
+					ShouldAddNewLine: true,
 				}
 			case *ast.ImportNode:
 				result.SourcePosition = n.End()
-				result.Data = map[string]interface{}{
-					"shouldAddNewLine": false,
+				result.Data = ProtoNewImportPositionData{
+					ShouldAddNewLine: false,
 				}
 			}
 
@@ -74,20 +89,18 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(
 					result.SourcePosition = n.CloseBrace.Start()
 
 					// Get the highest field number so that new additions can have the next value.
-					highestFieldNumber := 0
+					data := ProtoNewMessageFieldPositionData{
+						HighestFieldNumber: 0,
+					}
 					for _, decl := range n.Decls {
 						switch d := decl.(type) {
 						case *ast.FieldNode:
-							v := int(d.Tag.Val)
-							if v > highestFieldNumber {
-								highestFieldNumber = v
+							if d.Tag.Val > data.HighestFieldNumber {
+								data.HighestFieldNumber = d.Tag.Val
 							}
 						}
 					}
-
-					result.Data = map[string]interface{}{
-						"highestFieldNumber": highestFieldNumber,
-					}
+					result.Data = data
 				}
 			}
 
@@ -133,20 +146,18 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 					result.SourcePosition = n.CloseBrace.Start()
 
 					// Get the highest field number so that new additions can have the next value.
-					highestFieldNumber := 0
+					data := ProtoNewOneOfFieldPositionData{
+						HighestFieldNumber: 0,
+					}
 					for _, decl := range n.Decls {
 						switch d := decl.(type) {
 						case *ast.FieldNode:
-							v := int(d.Tag.Val)
-							if v > highestFieldNumber {
-								highestFieldNumber = v
+							if d.Tag.Val > data.HighestFieldNumber {
+								data.HighestFieldNumber = d.Tag.Val
 							}
 						}
 					}
-
-					result.Data = map[string]interface{}{
-						"highestFieldNumber": highestFieldNumber,
-					}
+					result.Data = data
 				}
 			}
 
