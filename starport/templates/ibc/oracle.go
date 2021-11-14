@@ -125,8 +125,8 @@ func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) 
 
 		// Import the type
 		templateImport := `
-import "%[2]v/%[3]v.proto";`
-		replacementImport := fmt.Sprintf(templateImport, Placeholder, opts.ModuleName, opts.QueryName.Snake)
+import "%[1]v/%[2]v.proto";`
+		replacementImport := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
 		content, err := clipper.PasteProtoSnippetAt(
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
@@ -139,6 +139,7 @@ import "%[2]v/%[3]v.proto";`
 
 		// Add the service
 		templateService := `
+
   // %[1]vResult defines a rpc handler method for Msg%[1]vData.
   rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
     option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
@@ -166,6 +167,7 @@ import "%[2]v/%[3]v.proto";`
 
 		// Add the service messages
 		templateMessage := `
+
 message Query%[1]vRequest {int64 request_id = 1;}
 
 message Query%[1]vResponse {
@@ -234,6 +236,7 @@ rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
 		}
 
 		templateMessage := `
+
 message Msg%[1]vData {
   string %[2]v = 1;
   uint64 oracle_script_id = 2 [
