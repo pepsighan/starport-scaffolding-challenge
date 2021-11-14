@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
@@ -59,7 +60,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 
 	// Add the component
 	g.RunFn(moduleModify(replacer, opts))
-	g.RunFn(protoModify(replacer, opts))
+	g.RunFn(protoModify(opts))
 	g.RunFn(eventModify(replacer, opts))
 	if err := g.Box(componentTemplate); err != nil {
 		return g, err
@@ -67,7 +68,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 
 	// Add the send message
 	if !opts.NoMessage {
-		g.RunFn(protoTxModify(replacer, opts))
+		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerTxModify(replacer, opts))
 		g.RunFn(clientCliTxModify(replacer, opts))
 		g.RunFn(codecModify(replacer, opts))
@@ -172,7 +173,7 @@ func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunF
 	}
 }
 
-func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoModify(opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "packet.proto")
 		f, err := r.Disk.Find(path)
@@ -182,29 +183,39 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 
 		content := f.String()
 
-		// Add the field in the module packet
-		fieldCount := strings.Count(content, PlaceholderIBCPacketProtoFieldNumber)
-		templateField := `%[1]v
-				%[2]vPacketData %[3]vPacket = %[4]v; %[5]v`
-		replacementField := fmt.Sprintf(
-			templateField,
-			PlaceholderIBCPacketProtoField,
-			opts.PacketName.UpperCamel,
-			opts.PacketName.LowerCamel,
-			fieldCount+2,
-			PlaceholderIBCPacketProtoFieldNumber,
+		// Add the fld in the module packet
+		templateField := `%[1]vPacketData %[2]vPacket = %[3]v;
+  `
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewOneOfFieldPosition,
+			clipper.SelectOptions{
+				"messageName": fmt.Sprintf("%vPacketData", strings.Title(opts.ModuleName)),
+				"oneOfName":   "packet",
+			},
+			func(data interface{}) string {
+				fieldNumber := data.(clipper.ProtoNewOneOfFieldPositionData).HighestFieldNumber
+				return fmt.Sprintf(
+					templateField,
+					opts.PacketName.UpperCamel,
+					opts.PacketName.LowerCamel,
+					fieldNumber+1,
+				)
+			},
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketProtoField, replacementField)
+		if err != nil {
+			return err
+		}
 
 		// Add the message definition for packet and acknowledgment
 		var packetFields string
-		for i, field := range opts.Fields {
-			packetFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+1))
+		for i, fld := range opts.Fields {
+			packetFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+1))
 		}
 
 		var ackFields string
-		for i, field := range opts.AckFields {
-			ackFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+1))
+		for i, fld := range opts.AckFields {
+			ackFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+1))
 		}
 
 		// Ensure custom types are imported
@@ -220,26 +231,42 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", PlaceholderProtoPacketImport, importModule)
-			content = replacer.Replace(content, PlaceholderProtoPacketImport, replacementImport)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf("\n%v", importModule)
+					}
+					return importModule
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		templateMessage := `// %[2]vPacketData defines a struct for the packet payload
-message %[2]vPacketData {
-%[3]v}
+		templateMessage := `
 
-// %[2]vPacketAck defines a struct for the packet acknowledgment
-message %[2]vPacketAck {
-	%[4]v}
-%[1]v`
+// %[1]vPacketData defines a struct for the packet payload
+message %[1]vPacketData {
+%[2]v}
+
+// %[1]vPacketAck defines a struct for the packet acknowledgment
+message %[1]vPacketAck {
+%[3]v}`
 		replacementMessage := fmt.Sprintf(
 			templateMessage,
-			PlaceholderIBCPacketProtoMessage,
 			opts.PacketName.UpperCamel,
 			packetFields,
 			ackFields,
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketProtoMessage, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -269,7 +296,7 @@ func eventModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoTxModify(opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -278,18 +305,27 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 		}
 
 		// RPC
-		templateRPC := `  rpc Send%[2]v(MsgSend%[2]v) returns (MsgSend%[2]vResponse);
-%[1]v`
+		templateRPC := `  rpc Send%[1]v(MsgSend%[1]v) returns (MsgSend%[1]vResponse);
+`
 		replacementRPC := fmt.Sprintf(
 			templateRPC,
-			PlaceholderProtoTxRPC,
 			opts.PacketName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), PlaceholderProtoTxRPC, replacementRPC)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacementRPC,
+		)
+		if err != nil {
+			return err
+		}
 
 		var sendFields string
-		for i, field := range opts.Fields {
-			sendFields += fmt.Sprintf("  %s;\n", field.ProtoType(i+5))
+		for i, fld := range opts.Fields {
+			sendFields += fmt.Sprintf("  %s;\n", fld.ProtoType(i+5))
 		}
 
 		// Ensure custom types are imported
@@ -304,32 +340,49 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", PlaceholderProtoTxImport, importModule)
-			content = replacer.Replace(content, PlaceholderProtoTxImport, replacementImport)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf("\n%v", importModule)
+					}
+					return importModule
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Message
 		// TODO: Include timestamp height
 		// This addition would include using the type ibc.core.client.v1.Height
 		// Ex: https://github.com/cosmos/cosmos-sdk/blob/816306b85addae6350bd380997f2f4bf9dce9471/proto/ibc/applications/transfer/v1/tx.proto
-		templateMessage := `message MsgSend%[2]v {
-  string %[3]v = 1;
+		templateMessage := `
+
+message MsgSend%[1]v {
+  string %[2]v = 1;
   string port = 2;
   string channelID = 3;
   uint64 timeoutTimestamp = 4;
-%[4]v}
+%[3]v}
 
-message MsgSend%[2]vResponse {
+message MsgSend%[1]vResponse {
 }
-%[1]v`
+`
 		replacementMessage := fmt.Sprintf(
 			templateMessage,
-			PlaceholderProtoTxMessage,
 			opts.PacketName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content = replacer.Replace(content, PlaceholderProtoTxMessage, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

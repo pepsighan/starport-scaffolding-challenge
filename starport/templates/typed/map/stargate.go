@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field/datatype"
@@ -64,10 +65,10 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 		)
 	)
 
-	g.RunFn(protoRPCModify(replacer, opts))
+	g.RunFn(protoRPCModify(opts))
 	g.RunFn(moduleGRPCGatewayModify(replacer, opts))
 	g.RunFn(clientCliQueryModify(replacer, opts))
-	g.RunFn(genesisProtoModify(replacer, opts))
+	g.RunFn(genesisProtoModify(opts))
 	g.RunFn(genesisTypesModify(replacer, opts))
 	g.RunFn(genesisModuleModify(replacer, opts))
 	g.RunFn(genesisTestsModify(replacer, opts))
@@ -75,7 +76,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 
 	// Modifications for new messages
 	if !opts.NoMessage {
-		g.RunFn(protoTxModify(replacer, opts))
+		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerModify(replacer, opts))
 		g.RunFn(clientCliTxModify(replacer, opts))
 		g.RunFn(typesCodecModify(replacer, opts))
@@ -99,7 +100,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 	return g, typed.Box(componentTemplate, opts, g)
 }
 
-func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoRPCModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -107,19 +108,33 @@ func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.Ru
 			return err
 		}
 
-		// Import the type
-		templateImport := `import "%s/%s.proto";
-%s`
-		replacementImport := fmt.Sprintf(templateImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-			typed.Placeholder,
-		)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacementImport)
+		content := strings.ReplaceAll(f.String(), `
+import "gogoproto/gogo.proto";`, "")
 
-		// Add gogo.proto
-		replacementGogoImport := typed.EnsureGogoProtoImported(path, typed.Placeholder)
-		content = replacer.Replace(content, typed.Placeholder, replacementGogoImport)
+		// Import the type
+		templateImport := `
+import "gogoproto/gogo.proto";
+import "%s/%s.proto";`
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		var lowerCamelIndexes []string
 		for _, index := range opts.Indexes {
@@ -128,18 +143,18 @@ func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.Ru
 		indexPath := strings.Join(lowerCamelIndexes, "/")
 
 		// Add the service
-		templateService := `// Queries a %[3]v by index.
-	rpc %[2]v(QueryGet%[2]vRequest) returns (QueryGet%[2]vResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/%[6]v/%[3]v/%[7]v";
+		templateService := `
+  // Queries a %[2]v by index.
+	rpc %[1]v(QueryGet%[1]vRequest) returns (QueryGet%[1]vResponse) {
+		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v/%[6]v";
 	}
 
-	// Queries a list of %[3]v items.
-	rpc %[2]vAll(QueryAll%[2]vRequest) returns (QueryAll%[2]vResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/%[6]v/%[3]v";
+	// Queries a list of %[2]v items.
+	rpc %[1]vAll(QueryAll%[1]vRequest) returns (QueryAll%[1]vResponse) {
+		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
 	}
-
-%[1]v`
-		replacementService := fmt.Sprintf(templateService, typed.Placeholder2,
+`
+		replacementService := fmt.Sprintf(templateService,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
 			opts.OwnerName,
@@ -147,7 +162,17 @@ func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.Ru
 			opts.ModuleName,
 			indexPath,
 		)
-		content = replacer.Replace(content, typed.Placeholder2, replacementService)
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Query",
+			},
+			replacementService,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Add the service messages
 		var queryIndexFields string
@@ -166,35 +191,51 @@ func protoRPCModify(replacer placeholder.Replacer, opts *typed.Options) genny.Ru
 			importModule := fmt.Sprintf(`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", typed.Placeholder, importModule)
-			content = replacer.Replace(content, typed.Placeholder, replacementImport)
+
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf("\n%v", importModule)
+					}
+					return importModule
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		templateMessage := `message QueryGet%[2]vRequest {
-	%[4]v
+		templateMessage := `
+
+message QueryGet%[1]vRequest {
+	%[3]v
 }
 
-message QueryGet%[2]vResponse {
-	%[2]v %[3]v = 1 [(gogoproto.nullable) = false];
+message QueryGet%[1]vResponse {
+	%[1]v %[2]v = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAll%[2]vRequest {
+message QueryAll%[1]vRequest {
 	cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
 
-message QueryAll%[2]vResponse {
-	repeated %[2]v %[3]v = 1 [(gogoproto.nullable) = false];
+message QueryAll%[1]vResponse {
+	repeated %[1]v %[2]v = 1 [(gogoproto.nullable) = false];
 	cosmos.base.query.v1beta1.PageResponse pagination = 2;
-}
-
-%[1]v`
+}`
 		replacementMessage := fmt.Sprintf(templateMessage,
-			typed.Placeholder3,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
 			queryIndexFields,
 		)
-		content = replacer.Replace(content, typed.Placeholder3, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -238,7 +279,7 @@ func clientCliQueryModify(replacer placeholder.Replacer, opts *typed.Options) ge
 	}
 }
 
-func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func genesisProtoModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)
@@ -246,36 +287,55 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateProtoImport := `import "%[2]v/%[3]v.proto";
-%[1]v`
-		replacementProtoImport := fmt.Sprintf(
-			templateProtoImport,
-			typed.PlaceholderGenesisProtoImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
+		content := strings.ReplaceAll(f.String(), `
+import "gogoproto/gogo.proto";`, "")
+
+		templateProtoImport := `
+import "gogoproto/gogo.proto";
+import "%[1]v/%[2]v.proto";`
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(
+					templateProtoImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisProtoImport, replacementProtoImport)
-
-		// Add gogo.proto
-		replacementGogoImport := typed.EnsureGogoProtoImported(path, typed.PlaceholderGenesisProtoImport)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoImport, replacementGogoImport)
-
-		// Parse proto file to determine the field numbers
-		highestNumber, err := typed.GenesisStateHighestFieldNumber(path)
 		if err != nil {
 			return err
 		}
 
-		templateProtoState := `repeated %[2]v %[3]vList = %[4]v [(gogoproto.nullable) = false];
-  %[1]v`
-		replacementProtoState := fmt.Sprintf(
-			templateProtoState,
-			typed.PlaceholderGenesisProtoState,
-			opts.TypeName.UpperCamel,
-			opts.TypeName.LowerCamel,
-			highestNumber+1,
+		templateProtoState := `  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
+`
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewMessageFieldPosition,
+			clipper.SelectOptions{
+				"name": "GenesisState",
+			},
+			func(data interface{}) string {
+				highestNumber := data.(clipper.ProtoNewMessageFieldPositionData).HighestFieldNumber
+				return fmt.Sprintf(
+					templateProtoState,
+					opts.TypeName.UpperCamel,
+					opts.TypeName.LowerCamel,
+					highestNumber+1,
+				)
+			},
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, replacementProtoState)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -477,7 +537,7 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func protoTxModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -486,24 +546,46 @@ func protoTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.Run
 		}
 
 		// Import
-		templateImport := `import "%s/%s.proto";
-%s`
-		replacementImport := fmt.Sprintf(templateImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-			typed.PlaceholderProtoTxImport,
+		templateImport := `
+import "%s/%s.proto";`
+
+		content, err := clipper.PasteGeneratedProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderProtoTxImport, replacementImport)
+		if err != nil {
+			return err
+		}
 
 		// RPC service
-		templateRPC := `  rpc Create%[2]v(MsgCreate%[2]v) returns (MsgCreate%[2]vResponse);
-  rpc Update%[2]v(MsgUpdate%[2]v) returns (MsgUpdate%[2]vResponse);
-  rpc Delete%[2]v(MsgDelete%[2]v) returns (MsgDelete%[2]vResponse);
-%[1]v`
-		replacementRPC := fmt.Sprintf(templateRPC, typed.PlaceholderProtoTxRPC,
-			opts.TypeName.UpperCamel,
+		templateRPC := `  rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
+  rpc Update%[1]v(MsgUpdate%[1]v) returns (MsgUpdate%[1]vResponse);
+  rpc Delete%[1]v(MsgDelete%[1]v) returns (MsgDelete%[1]vResponse);
+`
+		replacementRPC := fmt.Sprintf(templateRPC, opts.TypeName.UpperCamel)
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacementRPC,
 		)
-		content = replacer.Replace(content, typed.PlaceholderProtoTxRPC, replacementRPC)
+		if err != nil {
+			return err
+		}
 
 		// Messages
 		var indexes string
@@ -529,35 +611,51 @@ func protoTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.Run
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", typed.PlaceholderProtoTxImport, importModule)
-			content = replacer.Replace(content, typed.PlaceholderProtoTxImport, replacementImport)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf("\n%v", importModule)
+					}
+					return importModule
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
-		templateMessages := `message MsgCreate%[2]v {
-  string %[3]v = 1;
-%[4]v
-%[5]v}
-message MsgCreate%[2]vResponse {}
+		templateMessages := `
 
-message MsgUpdate%[2]v {
-  string %[3]v = 1;
-%[4]v
-%[5]v}
-message MsgUpdate%[2]vResponse {}
-
-message MsgDelete%[2]v {
-  string %[3]v = 1;
+message MsgCreate%[1]v {
+  string %[2]v = 1;
+%[3]v
 %[4]v}
-message MsgDelete%[2]vResponse {}
+message MsgCreate%[1]vResponse {}
 
-%[1]v`
-		replacementMessages := fmt.Sprintf(templateMessages, typed.PlaceholderProtoTxMessage,
+message MsgUpdate%[1]v {
+  string %[2]v = 1;
+%[3]v
+%[4]v}
+message MsgUpdate%[1]vResponse {}
+
+message MsgDelete%[1]v {
+  string %[2]v = 1;
+%[3]v}
+message MsgDelete%[1]vResponse {}`
+		replacementMessages := fmt.Sprintf(templateMessages,
 			opts.TypeName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 			indexes,
 			fields,
 		)
-		content = replacer.Replace(content, typed.PlaceholderProtoTxMessage, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

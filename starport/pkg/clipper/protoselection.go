@@ -1,6 +1,8 @@
 package clipper
 
-import "github.com/jhump/protoreflect/desc/protoparse/ast"
+import (
+	"github.com/jhump/protoreflect/desc/protoparse/ast"
+)
 
 // SelectOptions are the options needed to configure a particular selector.
 type SelectOptions map[string]string
@@ -8,6 +10,23 @@ type SelectOptions map[string]string
 // ProtoPositionSelectorResult contains position in code after a successful selection.
 type ProtoPositionSelectorResult struct {
 	SourcePosition *ast.SourcePos
+	// Any additional piece of data collected during a selection.
+	Data interface{}
+}
+
+// ProtoNewImportPositionData stores data collected during a selection of new import position.
+type ProtoNewImportPositionData struct {
+	ShouldAddNewLine bool
+}
+
+// ProtoNewMessageFieldPositionData stores data collected during a selection of a new message field position.
+type ProtoNewMessageFieldPositionData struct {
+	HighestFieldNumber uint64
+}
+
+// ProtoNewOneOfFieldPositionData stores data collected during a selection of new oneof field position.
+type ProtoNewOneOfFieldPositionData struct {
+	HighestFieldNumber uint64
 }
 
 // ProtoPositionSelector is a configurable selector which can select a position in code.
@@ -44,8 +63,15 @@ var ProtoSelectNewImportPosition = wrapFinder(
 			switch n := node.(type) {
 			case *ast.PackageNode:
 				result.SourcePosition = n.End()
+				// The incoming imports require an extra new line after package declaration.
+				result.Data = ProtoNewImportPositionData{
+					ShouldAddNewLine: true,
+				}
 			case *ast.ImportNode:
 				result.SourcePosition = n.End()
+				result.Data = ProtoNewImportPositionData{
+					ShouldAddNewLine: false,
+				}
 			}
 
 			return true, nil
@@ -60,7 +86,21 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(
 			if n, ok := node.(*ast.MessageNode); ok {
 				if n.Name.Val == options["name"] {
 					// If the message's name matches then we are on the correct one.
-					result.SourcePosition = n.OpenBrace.End()
+					result.SourcePosition = n.CloseBrace.Start()
+
+					// Get the highest field number so that new additions can have the next value.
+					data := ProtoNewMessageFieldPositionData{
+						HighestFieldNumber: 0,
+					}
+					for _, decl := range n.Decls {
+						switch d := decl.(type) {
+						case *ast.FieldNode:
+							if d.Tag.Val > data.HighestFieldNumber {
+								data.HighestFieldNumber = d.Tag.Val
+							}
+						}
+					}
+					result.Data = data
 				}
 			}
 
@@ -76,7 +116,7 @@ var ProtoSelectNewServiceMethodPosition = wrapFinder(
 			if n, ok := node.(*ast.ServiceNode); ok {
 				if n.Name.Val == options["name"] {
 					// If the message's name matches then we are on the correct one.
-					result.SourcePosition = n.OpenBrace.End()
+					result.SourcePosition = n.CloseBrace.Start()
 				}
 			}
 
@@ -104,6 +144,20 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 					// If the oneof type's name matches then this is it. Select the position just before the ending
 					// brace.
 					result.SourcePosition = n.CloseBrace.Start()
+
+					// Get the highest field number so that new additions can have the next value.
+					data := ProtoNewOneOfFieldPositionData{
+						HighestFieldNumber: 0,
+					}
+					for _, decl := range n.Decls {
+						switch d := decl.(type) {
+						case *ast.FieldNode:
+							if d.Tag.Val > data.HighestFieldNumber {
+								data.HighestFieldNumber = d.Tag.Val
+							}
+						}
+					}
+					result.Data = data
 				}
 			}
 
@@ -113,7 +167,7 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 )
 
 // ProtoSelectLastPosition selects the last position within the code.
-func ProtoSelectLastPosition(code string) (*ProtoPositionSelectorResult, error) {
+func ProtoSelectLastPosition(code string, _ SelectOptions) (*ProtoPositionSelectorResult, error) {
 	parsedAST, err := parseProto(code)
 	if err != nil {
 		return nil, err

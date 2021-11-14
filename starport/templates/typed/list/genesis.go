@@ -3,22 +3,24 @@ package list
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/module"
 	"github.com/tendermint/starport/starport/templates/typed"
 )
 
 func genesisModify(replacer placeholder.Replacer, opts *typed.Options, g *genny.Generator) {
-	g.RunFn(genesisProtoModify(replacer, opts))
+	g.RunFn(genesisProtoModify(opts))
 	g.RunFn(genesisTypesModify(replacer, opts))
 	g.RunFn(genesisModuleModify(replacer, opts))
 	g.RunFn(genesisTestsModify(replacer, opts))
 	g.RunFn(genesisTypesTestsModify(replacer, opts))
 }
 
-func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func genesisProtoModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)
@@ -26,38 +28,57 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateProtoImport := `import "%[2]v/%[3]v.proto";
-%[1]v`
-		replacementProtoImport := fmt.Sprintf(
-			templateProtoImport,
-			typed.PlaceholderGenesisProtoImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
+		content := strings.ReplaceAll(f.String(), `
+import "gogoproto/gogo.proto";`, "")
+
+		templateProtoImport := `
+import "gogoproto/gogo.proto";
+import "%[1]v/%[2]v.proto";`
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(
+					templateProtoImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisProtoImport, replacementProtoImport)
-
-		// Add gogo.proto
-		replacementGogoImport := typed.EnsureGogoProtoImported(path, typed.PlaceholderGenesisProtoImport)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoImport, replacementGogoImport)
-
-		// Parse proto file to determine the field numbers
-		highestNumber, err := typed.GenesisStateHighestFieldNumber(path)
 		if err != nil {
 			return err
 		}
 
-		templateProtoState := `repeated %[2]v %[3]vList = %[4]v [(gogoproto.nullable) = false];
-  uint64 %[3]vCount = %[5]v;
-  %[1]v`
-		replacementProtoState := fmt.Sprintf(
-			templateProtoState,
-			typed.PlaceholderGenesisProtoState,
-			opts.TypeName.UpperCamel,
-			opts.TypeName.LowerCamel,
-			highestNumber+1,
-			highestNumber+2,
+		templateProtoState := `  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
+  uint64 %[2]vCount = %[4]v;
+`
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewMessageFieldPosition,
+			clipper.SelectOptions{
+				"name": "GenesisState",
+			},
+			func(data interface{}) string {
+				highestNumber := data.(clipper.ProtoNewMessageFieldPositionData).HighestFieldNumber
+				return fmt.Sprintf(
+					templateProtoState,
+					opts.TypeName.UpperCamel,
+					opts.TypeName.LowerCamel,
+					highestNumber+1,
+					highestNumber+2,
+				)
+			},
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, replacementProtoState)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

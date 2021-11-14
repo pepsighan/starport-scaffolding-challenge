@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
@@ -40,8 +41,8 @@ func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Gener
 	template := xgenny.NewEmbedWalker(fsOracle, "oracle/", opts.AppPath)
 
 	g.RunFn(moduleOracleModify(replacer, opts))
-	g.RunFn(protoQueryOracleModify(replacer, opts))
-	g.RunFn(protoTxOracleModify(replacer, opts))
+	g.RunFn(protoQueryOracleModify(opts))
+	g.RunFn(protoTxOracleModify(opts))
 	g.RunFn(handlerTxOracleModify(replacer, opts))
 	g.RunFn(clientCliQueryOracleModify(replacer, opts))
 	g.RunFn(clientCliTxOracleModify(replacer, opts))
@@ -114,7 +115,7 @@ func moduleOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genn
 	}
 }
 
-func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoQueryOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -123,52 +124,77 @@ func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) 
 		}
 
 		// Import the type
-		templateImport := `import "%[2]v/%[3]v.proto";
-%[1]v`
-		replacementImport := fmt.Sprintf(templateImport, Placeholder, opts.ModuleName, opts.QueryName.Snake)
-		content := replacer.Replace(f.String(), Placeholder, replacementImport)
+		templateImport := `
+import "%[1]v/%[2]v.proto";`
+		content, err := clipper.PasteGeneratedProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		// Add the service
 		templateService := `
-  	// %[2]vResult defines a rpc handler method for Msg%[2]vData.
-  	rpc %[2]vResult(Query%[2]vRequest) returns (Query%[2]vResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/%[3]v_result/{request_id}";
-  	}
+  // %[1]vResult defines a rpc handler method for Msg%[1]vData.
+  rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
+    option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
+  }
 
-  	// Last%[2]vId query the last %[2]v result id
-  	rpc Last%[2]vId(QueryLast%[2]vIdRequest) returns (QueryLast%[2]vIdResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/last_%[3]v_id";
-  	}
-%[1]v`
-		replacementService := fmt.Sprintf(templateService, Placeholder2,
+  // Last%[1]vId query the last %[1]v result id
+  rpc Last%[1]vId(QueryLast%[1]vIdRequest) returns (QueryLast%[1]vIdResponse) {
+    option (google.api.http).get = "/%[3]v/%[4]v/last_%[2]v_id";
+  }
+`
+		replacementService := fmt.Sprintf(templateService,
 			opts.QueryName.UpperCamel,
 			opts.QueryName.Snake,
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, Placeholder2, replacementService)
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Query",
+			},
+			replacementService,
+		)
 
 		// Add the service messages
-		templateMessage := `message Query%[2]vRequest {int64 request_id = 1;}
+		templateMessage := `
 
-message Query%[2]vResponse {
-  %[2]vResult result = 1;
+message Query%[1]vRequest {int64 request_id = 1;}
+
+message Query%[1]vResponse {
+  %[1]vResult result = 1;
 }
 
-message QueryLast%[2]vIdRequest {}
+message QueryLast%[1]vIdRequest {}
 
-message QueryLast%[2]vIdResponse {int64 request_id = 1;}
-
-%[1]v`
-		replacementMessage := fmt.Sprintf(templateMessage, Placeholder3, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, Placeholder3, replacementMessage)
+message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
+		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func protoTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoTxOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -182,27 +208,53 @@ import "gogoproto/gogo.proto";`, "")
 import "cosmos/base/v1beta1/coin.proto";`, "")
 
 		// Import
-		templateImport := `import "gogoproto/gogo.proto";
+		templateImport := `
+import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "%[2]v/%[3]v.proto";
-%[1]v`
-		replacementImport := fmt.Sprintf(templateImport, PlaceholderProtoTxImport, opts.ModuleName, opts.QueryName.Snake)
-		content = replacer.Replace(content, PlaceholderProtoTxImport, replacementImport)
+import "%[1]v/%[2]v.proto";`
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewImportPosition,
+			nil,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf("\n%v", importString)
+				}
+				return importString
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		// RPC
-		templateRPC := `  rpc %[2]vData(Msg%[2]vData) returns (Msg%[2]vDataResponse);
-%[1]v`
-		replacementRPC := fmt.Sprintf(templateRPC, PlaceholderProtoTxRPC, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, PlaceholderProtoTxRPC, replacementRPC)
+		templateRPC := `  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
+`
+		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteProtoSnippetAt(
+			content,
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Msg",
+			},
+			replacementRPC,
+		)
+		if err != nil {
+			return err
+		}
 
-		templateMessage := `message Msg%[2]vData {
-  string %[3]v = 1;
+		templateMessage := `
+
+message Msg%[1]vData {
+  string %[2]v = 1;
   uint64 oracle_script_id = 2 [
     (gogoproto.customname) = "OracleScriptID",
     (gogoproto.moretags) = "yaml:\"oracle_script_id\""
   ];
   string source_channel = 3;
-  %[2]vCallData calldata = 4;
+  %[1]vCallData calldata = 4;
   uint64 ask_count = 5;
   uint64 min_count = 6;
   repeated cosmos.base.v1beta1.Coin fee_limit = 7 [
@@ -214,15 +266,16 @@ import "%[2]v/%[3]v.proto";
   string client_id = 10 [(gogoproto.customname) = "ClientID"];
 }
 
-message Msg%[2]vDataResponse {
-}
-
-%[1]v`
-		replacementMessage := fmt.Sprintf(templateMessage, PlaceholderProtoTxMessage,
+message Msg%[1]vDataResponse {
+}`
+		replacementMessage := fmt.Sprintf(templateMessage,
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content = replacer.Replace(content, PlaceholderProtoTxMessage, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

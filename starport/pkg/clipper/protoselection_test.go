@@ -37,6 +37,7 @@ message MarsPacketData {
 }
 
 message NoData {
+
 }`
 
 func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
@@ -50,6 +51,10 @@ func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
 	}
 
 	if result.SourcePosition.Line != 2 || result.SourcePosition.Col != 29 {
+		t.Fatal("wrong result found", result)
+	}
+
+	if result.Data.(ProtoNewImportPositionData).ShouldAddNewLine != true {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -67,6 +72,10 @@ func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
 	if result.SourcePosition.Line != 5 || result.SourcePosition.Col != 53 {
 		t.Fatal("wrong result found", result)
 	}
+
+	if result.Data.(ProtoNewImportPositionData).ShouldAddNewLine != false {
+		t.Fatal("wrong result found", result)
+	}
 }
 
 func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
@@ -81,7 +90,7 @@ func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 7 || result.SourcePosition.Col != 23 {
+	if result.SourcePosition.Line != 9 || result.SourcePosition.Col != 1 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -98,7 +107,7 @@ func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 10 || result.SourcePosition.Col != 16 {
+	if result.SourcePosition.Line != 12 || result.SourcePosition.Col != 1 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -118,7 +127,7 @@ func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
 }
 
 func TestProtoSelectLastPosition(t *testing.T) {
-	result, err := ProtoSelectLastPosition(queryProtoFile)
+	result, err := ProtoSelectLastPosition(queryProtoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

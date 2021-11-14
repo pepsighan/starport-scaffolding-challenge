@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 )
@@ -21,13 +22,13 @@ func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator
 		)
 	)
 
-	g.RunFn(protoQueryModify(replacer, opts))
+	g.RunFn(protoQueryModify(opts))
 	g.RunFn(cliQueryModify(replacer, opts))
 
 	return g, Box(template, opts, g)
 }
 
-func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func protoQueryModify(opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -36,22 +37,32 @@ func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 		}
 
 		// RPC service
-		templateRPC := `// Queries a list of %[3]v items.
-	rpc %[2]v(Query%[2]vRequest) returns (Query%[2]vResponse) {
-		option (google.api.http).get = "/%[4]v/%[5]v/%[6]v/%[3]v";
-	}
+		templateRPC := `
 
-%[1]v`
+  // Queries a list of %[2]v items.
+	rpc %[1]v(Query%[1]vRequest) returns (Query%[1]vResponse) {
+		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
+	}
+`
 		replacementRPC := fmt.Sprintf(
 			templateRPC,
-			Placeholder2,
 			opts.QueryName.UpperCamel,
 			opts.QueryName.LowerCamel,
 			opts.OwnerName,
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content := replacer.Replace(f.String(), Placeholder2, replacementRPC)
+		content, err := clipper.PasteProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewServiceMethodPosition,
+			clipper.SelectOptions{
+				"name": "Query",
+			},
+			replacementRPC,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Fields for request
 		var reqFields string
@@ -84,26 +95,41 @@ func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			replacementImport := fmt.Sprintf("%[1]v%[2]v", Placeholder, importModule)
-			content = replacer.Replace(content, Placeholder, replacementImport)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf("\n%v", importModule)
+					}
+					return importModule
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Messages
-		templateMessages := `message Query%[2]vRequest {
-%[3]v}
+		templateMessages := `
 
-message Query%[2]vResponse {
-%[4]v}
+message Query%[1]vRequest {
+%[2]v}
 
-%[1]v`
+message Query%[1]vResponse {
+%[3]v}`
 		replacementMessages := fmt.Sprintf(
 			templateMessages,
-			Placeholder3,
 			opts.QueryName.UpperCamel,
 			reqFields,
 			resFields,
 		)
-		content = replacer.Replace(content, Placeholder3, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
