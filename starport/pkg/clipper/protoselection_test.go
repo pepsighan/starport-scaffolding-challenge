@@ -53,6 +53,10 @@ func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
 	if result.SourcePosition.Line != 2 || result.SourcePosition.Col != 29 {
 		t.Fatal("wrong result found", result)
 	}
+
+	if result.Data["shouldAddNewLine"] != true {
+		t.Fatal("wrong result found", result)
+	}
 }
 
 func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
@@ -66,6 +70,10 @@ func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
 	}
 
 	if result.SourcePosition.Line != 5 || result.SourcePosition.Col != 53 {
+		t.Fatal("wrong result found", result)
+	}
+
+	if result.Data["shouldAddNewLine"] != false {
 		t.Fatal("wrong result found", result)
 	}
 }

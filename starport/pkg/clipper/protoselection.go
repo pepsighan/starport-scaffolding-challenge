@@ -48,8 +48,15 @@ var ProtoSelectNewImportPosition = wrapFinder(
 			switch n := node.(type) {
 			case *ast.PackageNode:
 				result.SourcePosition = n.End()
+				// The incoming imports require an extra new line after package declaration.
+				result.Data = map[string]interface{}{
+					"shouldAddNewLine": true,
+				}
 			case *ast.ImportNode:
 				result.SourcePosition = n.End()
+				result.Data = map[string]interface{}{
+					"shouldAddNewLine": false,
+				}
 			}
 
 			return true, nil
