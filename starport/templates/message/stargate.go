@@ -137,11 +137,17 @@ message Msg%[1]vResponse {
 			importModule := fmt.Sprintf(`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
-			content, err = clipper.PasteProtoSnippetAt(
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
 				content,
 				clipper.ProtoSelectNewImportPosition,
 				nil,
-				importModule,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf(`\n%v`, importModule)
+					}
+					return importModule
+				},
 			)
 			if err != nil {
 				return err

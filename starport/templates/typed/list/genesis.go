@@ -34,16 +34,23 @@ import "gogoproto/gogo.proto";`, "")
 		templateProtoImport := `
 import "gogoproto/gogo.proto";
 import "%[1]v/%[2]v.proto";`
-		replacementProtoImport := fmt.Sprintf(
-			templateProtoImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-		)
-		content, err = clipper.PasteProtoSnippetAt(
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			replacementProtoImport,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(
+					templateProtoImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf(`\n%v`, importString)
+				}
+				return importString
+			},
 		)
 		if err != nil {
 			return err

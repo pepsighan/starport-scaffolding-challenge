@@ -115,15 +115,22 @@ import "gogoproto/gogo.proto";`, "")
 		templateImport := `
 import "gogoproto/gogo.proto";
 import "%s/%s.proto";`
-		replacementImport := fmt.Sprintf(templateImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-		)
-		content, err = clipper.PasteProtoSnippetAt(
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			replacementImport,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf(`\n%v`, importString)
+				}
+				return importString
+			},
 		)
 		if err != nil {
 			return err
@@ -184,7 +191,18 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectNewImportPosition, nil, importModule)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf(`\n%v`, importModule)
+					}
+					return importModule
+				},
+			)
 			if err != nil {
 				return err
 			}
@@ -274,16 +292,23 @@ import "gogoproto/gogo.proto";`, "")
 		templateProtoImport := `
 import "gogoproto/gogo.proto";
 import "%[1]v/%[2]v.proto";`
-		replacementProtoImport := fmt.Sprintf(
-			templateProtoImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-		)
-		content, err = clipper.PasteProtoSnippetAt(
+
+		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			replacementProtoImport,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(
+					templateProtoImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf(`\n%v`, importString)
+				}
+				return importString
+			},
 		)
 		if err != nil {
 			return err
@@ -522,15 +547,22 @@ func protoTxModify(opts *typed.Options) genny.RunFn {
 		// Import
 		templateImport := `
 import "%s/%s.proto";`
-		replacementImport := fmt.Sprintf(templateImport,
-			opts.ModuleName,
-			opts.TypeName.Snake,
-		)
-		content, err := clipper.PasteProtoSnippetAt(
+
+		content, err := clipper.PasteGeneratedProtoSnippetAt(
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			replacementImport,
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport,
+					opts.ModuleName,
+					opts.TypeName.Snake,
+				)
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf(`\n%v`, importString)
+				}
+				return importString
+			},
 		)
 		if err != nil {
 			return err
@@ -578,7 +610,18 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectNewImportPosition, nil, importModule)
+			content, err = clipper.PasteGeneratedProtoSnippetAt(
+				content,
+				clipper.ProtoSelectNewImportPosition,
+				nil,
+				func(data interface{}) string {
+					shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+					if shouldAddNewLine {
+						return fmt.Sprintf(`\n%v`, importModule)
+					}
+					return importModule
+				},
+			)
 			if err != nil {
 				return err
 			}
