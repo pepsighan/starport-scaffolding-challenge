@@ -130,8 +130,14 @@ import "%[1]v/%[2]v.proto";`
 			f.String(),
 			clipper.ProtoSelectNewImportPosition,
 			nil,
-			func(data map[string]interface{}) string {
-				return fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+			func(data interface{}) string {
+				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+
+				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
+				if shouldAddNewLine {
+					return fmt.Sprintf(`\n%v`, importString)
+				}
+				return importString
 			},
 		)
 		if err != nil {
