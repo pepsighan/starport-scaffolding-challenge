@@ -59,9 +59,8 @@ import "%[1]v/%[2]v.proto";`
 			clipper.SelectOptions{
 				"name": "GenesisState",
 			},
-			func(data map[string]interface{}) string {
-				highestNumber := data["highestFieldNumber"].(int)
-
+			func(data interface{}) string {
+				highestNumber := data.(clipper.ProtoNewMessageFieldPositionData).HighestFieldNumber
 				return fmt.Sprintf(
 					templateProtoState,
 					opts.TypeName.UpperCamel,

@@ -193,9 +193,8 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 				"messageName": fmt.Sprintf("%vPacketData", strings.Title(opts.ModuleName)),
 				"oneOfName":   "packet",
 			},
-			func(data map[string]interface{}) string {
-				fieldNumber := data["highestFieldNumber"].(int)
-
+			func(data interface{}) string {
+				fieldNumber := data.(clipper.ProtoNewOneOfFieldPositionData).HighestFieldNumber
 				return fmt.Sprintf(
 					templateField,
 					opts.PacketName.UpperCamel,
