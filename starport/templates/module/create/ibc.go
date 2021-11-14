@@ -8,6 +8,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
@@ -126,12 +127,19 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		}
 
 		// Determine the new field number
-		content := f.String()
-
-		template := `string port_id = 2;
-  %s`
-		replacement := fmt.Sprintf(template, typed.PlaceholderGenesisProtoState)
-		content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, replacement)
+		snippet := `string port_id = %v;
+  `
+		content, err := clipper.PasteGeneratedProtoSnippetAt(
+			f.String(),
+			clipper.ProtoSelectNewMessageFieldPosition,
+			clipper.SelectOptions{
+				"name": "GenesisState",
+			},
+			func(data map[string]interface{}) string {
+				highestNumber := data["highestFieldNumber"].(int)
+				return fmt.Sprintf(snippet, highestNumber)
+			},
+		)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
