@@ -152,7 +152,8 @@ import "%s/%s.proto";`
 	// Queries a list of %[2]v items.
 	rpc %[1]vAll(QueryAll%[1]vRequest) returns (QueryAll%[1]vResponse) {
 		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
-	}`
+	}
+`
 		replacementService := fmt.Sprintf(templateService,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
@@ -314,8 +315,8 @@ import "%[1]v/%[2]v.proto";`
 			return err
 		}
 
-		templateProtoState := `repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
-  `
+		templateProtoState := `  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
+`
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
@@ -572,7 +573,7 @@ import "%s/%s.proto";`
 		templateRPC := `  rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
   rpc Update%[1]v(MsgUpdate%[1]v) returns (MsgUpdate%[1]vResponse);
   rpc Delete%[1]v(MsgDelete%[1]v) returns (MsgDelete%[1]vResponse);
-  `
+`
 		replacementRPC := fmt.Sprintf(templateRPC, opts.TypeName.UpperCamel)
 		content, err = clipper.PasteProtoSnippetAt(
 			content,
