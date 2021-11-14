@@ -139,7 +139,6 @@ import "%[1]v/%[2]v.proto";`
 
 		// Add the service
 		templateService := `
-
   // %[1]vResult defines a rpc handler method for Msg%[1]vData.
   rpc %[1]vResult(Query%[1]vRequest) returns (Query%[1]vResponse) {
     option (google.api.http).get = "/%[3]v/%[4]v/%[2]v_result/{request_id}";
@@ -176,8 +175,7 @@ message Query%[1]vResponse {
 
 message QueryLast%[1]vIdRequest {}
 
-message QueryLast%[1]vIdResponse {int64 request_id = 1;}
-`
+message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
 		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
 		if err != nil {
@@ -219,8 +217,7 @@ import "%[1]v/%[2]v.proto";`
 		}
 
 		// RPC
-		templateRPC := `
-rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
+		templateRPC := `  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
 		content, err = clipper.PasteProtoSnippetAt(
@@ -256,7 +253,7 @@ message Msg%[1]vData {
   string client_id = 10 [(gogoproto.customname) = "ClientID"];
 }
 
-message Msg%[2]vDataResponse {
+message Msg%[1]vDataResponse {
 }`
 		replacementMessage := fmt.Sprintf(templateMessage,
 			opts.QueryName.UpperCamel,
