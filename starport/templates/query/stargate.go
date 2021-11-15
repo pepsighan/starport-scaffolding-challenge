@@ -38,7 +38,6 @@ func protoQueryModify(opts *Options) genny.RunFn {
 
 		// RPC service
 		templateRPC := `
-
   // Queries a list of %[2]v items.
 	rpc %[1]v(Query%[1]vRequest) returns (Query%[1]vResponse) {
 		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
