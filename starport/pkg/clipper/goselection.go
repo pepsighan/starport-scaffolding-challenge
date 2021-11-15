@@ -23,7 +23,7 @@ func (f goVisitor) Visit(node ast.Node) ast.Visitor {
 // wrapGoFinder creates a selector out of each finder.
 func wrapGoFinder(finder goPositionFinder) PositionSelector {
 	return func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
-		parsedAST, err := parser.ParseExprFrom(token.NewFileSet(), path, []byte(code), 0)
+		parsedAST, err := parser.ParseFile(token.NewFileSet(), path, []byte(code), 0)
 		if err != nil {
 			return nil, err
 		}
@@ -44,16 +44,16 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 var GoSelectNewImportLocation = wrapGoFinder(func(result *PositionSelectorResult, options SelectOptions) goVisitor {
 	return func(node ast.Node) bool {
 		switch n := node.(type) {
-		case *ast.Package:
+		case *ast.File:
 			// Adds new import after package declaration.
-			result.OffsetPosition = OffsetPosition(n.End())
+			result.OffsetPosition = OffsetPosition(n.Name.End())
 		case *ast.ImportSpec:
 			// Adds new import after this one.
 			result.OffsetPosition = OffsetPosition(n.End())
 		case *ast.GenDecl:
 			if n.Tok == token.IMPORT {
-				// Adds new import at the start of the import block.
-				result.OffsetPosition = OffsetPosition(n.Lparen)
+				// Adds new import after the last import URL.
+				result.OffsetPosition = OffsetPosition(n.Specs[0].End())
 			}
 		}
 
