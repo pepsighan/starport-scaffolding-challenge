@@ -117,7 +117,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err := clipper.PasteProtoImportSnippetAt(f.String(), importString)
+		content, err := clipper.PasteProtoImportSnippetAt(path, f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -129,6 +129,7 @@ import "%s/%s.proto";`
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.TypeName.UpperCamel)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -162,7 +163,7 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -197,7 +198,13 @@ message MsgDelete%[1]vResponse {}`
 			createFields,
 			updateFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessages,
+		)
 		if err != nil {
 			return err
 		}
@@ -227,7 +234,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
+		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -252,6 +259,7 @@ import "%s/%s.proto";`
 			opts.ModuleName,
 		)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -286,7 +294,13 @@ message QueryAll%[1]vResponse {
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessages,
+		)
 		if err != nil {
 			return err
 		}

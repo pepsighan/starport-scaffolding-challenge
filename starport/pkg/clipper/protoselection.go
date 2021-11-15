@@ -30,15 +30,15 @@ type ProtoNewOneOfFieldPositionData struct {
 }
 
 // ProtoPositionSelector is a configurable selector which can select a position in code.
-type ProtoPositionSelector func(code string, options SelectOptions) (*ProtoPositionSelectorResult, error)
+type ProtoPositionSelector func(path, code string, options SelectOptions) (*ProtoPositionSelectorResult, error)
 
 // protoPositionFinder tries to find a required position during a walk of the protobuf AST.
 type protoPositionFinder func(result *ProtoPositionSelectorResult, options SelectOptions) ast.VisitFunc
 
 // wrapFinder creates a selector out of each finder.
 func wrapFinder(find protoPositionFinder) ProtoPositionSelector {
-	return func(code string, options SelectOptions) (*ProtoPositionSelectorResult, error) {
-		parsedAST, err := parseProto(code)
+	return func(path, code string, options SelectOptions) (*ProtoPositionSelectorResult, error) {
+		parsedAST, err := parseProto(path, code)
 		if err != nil {
 			return nil, err
 		}
@@ -167,8 +167,8 @@ var ProtoSelectNewOneOfFieldPosition = wrapFinder(
 )
 
 // ProtoSelectLastPosition selects the last position within the code.
-func ProtoSelectLastPosition(code string, _ SelectOptions) (*ProtoPositionSelectorResult, error) {
-	parsedAST, err := parseProto(code)
+func ProtoSelectLastPosition(path, code string, _ SelectOptions) (*ProtoPositionSelectorResult, error) {
+	parsedAST, err := parseProto(path, code)
 	if err != nil {
 		return nil, err
 	}

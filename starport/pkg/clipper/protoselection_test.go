@@ -41,7 +41,7 @@ message NoData {
 }`
 
 func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
-	result, err := ProtoSelectNewImportPosition(genesisProtoFile, nil)
+	result, err := ProtoSelectNewImportPosition("test.proto", genesisProtoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
 }
 
 func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
-	result, err := ProtoSelectNewImportPosition(queryProtoFile, nil)
+	result, err := ProtoSelectNewImportPosition("test.proto", queryProtoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
 }
 
 func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
-	result, err := ProtoSelectNewMessageFieldPosition(genesisProtoFile, SelectOptions{
+	result, err := ProtoSelectNewMessageFieldPosition("test.proto", genesisProtoFile, SelectOptions{
 		"name": "GenesisState",
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
 }
 
 func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
-	result, err := ProtoSelectNewServiceMethodPosition(queryProtoFile, SelectOptions{
+	result, err := ProtoSelectNewServiceMethodPosition("test.proto", queryProtoFile, SelectOptions{
 		"name": "Query",
 	})
 	if err != nil {
@@ -113,7 +113,7 @@ func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
 }
 
 func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
-	result, err := ProtoSelectNewOneOfFieldPosition(packetProtoFile, SelectOptions{
+	result, err := ProtoSelectNewOneOfFieldPosition("test.proto", packetProtoFile, SelectOptions{
 		"messageName": "NoData",
 		"oneOfName":   "packet",
 	})
@@ -127,7 +127,7 @@ func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
 }
 
 func TestProtoSelectLastPosition(t *testing.T) {
-	result, err := ProtoSelectLastPosition(queryProtoFile, nil)
+	result, err := ProtoSelectLastPosition("test.proto", queryProtoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

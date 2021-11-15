@@ -187,6 +187,7 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 		templateField := `%[1]vPacketData %[2]vPacket = %[3]v;
   `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewOneOfFieldPosition,
 			clipper.SelectOptions{
@@ -231,7 +232,7 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -252,7 +253,13 @@ message %[1]vPacketAck {
 			packetFields,
 			ackFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessage,
+		)
 		if err != nil {
 			return err
 		}
@@ -301,6 +308,7 @@ func protoTxModify(opts *PacketOptions) genny.RunFn {
 			opts.PacketName.UpperCamel,
 		)
 		content, err := clipper.PasteProtoSnippetAt(
+			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -329,7 +337,7 @@ func protoTxModify(opts *PacketOptions) genny.RunFn {
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -357,7 +365,13 @@ message MsgSend%[1]vResponse {
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessage,
+		)
 		if err != nil {
 			return err
 		}

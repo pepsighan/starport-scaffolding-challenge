@@ -103,7 +103,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
+		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -123,6 +123,7 @@ import "%s/%s.proto";`
 			opts.ModuleName,
 		)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -142,7 +143,13 @@ message QueryGet%[1]vResponse {
 	%[1]v %[1]v = 1 [(gogoproto.nullable) = false];
 }`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.TypeName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessage,
+		)
 		if err != nil {
 			return err
 		}
@@ -204,7 +211,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err := clipper.PasteProtoImportSnippetAt(f.String(), importString)
+		content, err := clipper.PasteProtoImportSnippetAt(path, f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -212,6 +219,7 @@ import "%[1]v/%[2]v.proto";`
 		templateProtoState := `%[1]v %[2]v = %[3]v;
   `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
 			clipper.SelectOptions{
@@ -385,7 +393,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err := clipper.PasteProtoImportSnippetAt(f.String(), importString)
+		content, err := clipper.PasteProtoImportSnippetAt(path, f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -399,6 +407,7 @@ import "%s/%s.proto";`
 			opts.TypeName.UpperCamel,
 		)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -428,7 +437,7 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -455,7 +464,13 @@ message MsgDelete%[1]vResponse {}`
 			opts.MsgSigner.LowerCamel,
 			fields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessages,
+		)
 		if err != nil {
 			return err
 		}

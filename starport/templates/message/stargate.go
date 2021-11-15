@@ -68,6 +68,7 @@ func protoTxRPCModify(opts *Options) genny.RunFn {
 `
 		replacement := fmt.Sprintf(template, opts.MsgName.UpperCamel)
 		content, err := clipper.PasteProtoSnippetAt(
+			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -116,6 +117,7 @@ message Msg%[1]vResponse {
 			opts.MsgSigner.LowerCamel,
 		)
 		content, err := clipper.PasteProtoSnippetAt(
+			path,
 			f.String(),
 			clipper.ProtoSelectLastPosition,
 			nil,
@@ -137,7 +139,7 @@ message Msg%[1]vResponse {
 			importModule := fmt.Sprintf(`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}

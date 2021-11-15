@@ -40,7 +40,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
+		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -49,6 +49,7 @@ import "%[1]v/%[2]v.proto";`
   uint64 %[2]vCount = %[4]v;
 `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
 			clipper.SelectOptions{
