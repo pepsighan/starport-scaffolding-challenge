@@ -22,8 +22,8 @@ type ProtoNewOneOfFieldPositionData struct {
 // protoPositionFinder tries to find a required position during a walk of the protobuf AST.
 type protoPositionFinder func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc
 
-// wrapFinder creates a selector out of each finder.
-func wrapFinder(find protoPositionFinder) PositionSelector {
+// wrapProtoFinder creates a selector out of each finder.
+func wrapProtoFinder(find protoPositionFinder) PositionSelector {
 	return func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
 		parsedAST, err := parseProto(path, code)
 		if err != nil {
@@ -49,7 +49,7 @@ func wrapFinder(find protoPositionFinder) PositionSelector {
 
 // ProtoSelectNewImportPosition selects a position for where a new import can be added. For example: right after
 // existing imports or the package declaration.
-var ProtoSelectNewImportPosition = wrapFinder(
+var ProtoSelectNewImportPosition = wrapProtoFinder(
 	func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc {
 		return func(node ast.Node) (bool, ast.VisitFunc) {
 			// Find the last item position. New import will be appended to the last import item
@@ -74,7 +74,7 @@ var ProtoSelectNewImportPosition = wrapFinder(
 )
 
 // ProtoSelectNewMessageFieldPosition selects a position for where a new field in a message can be added.
-var ProtoSelectNewMessageFieldPosition = wrapFinder(
+var ProtoSelectNewMessageFieldPosition = wrapProtoFinder(
 	func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc {
 		return func(node ast.Node) (bool, ast.VisitFunc) {
 			if n, ok := node.(*ast.MessageNode); ok {
@@ -104,7 +104,7 @@ var ProtoSelectNewMessageFieldPosition = wrapFinder(
 )
 
 // ProtoSelectNewServiceMethodPosition selects a position for where a new method in a service can be added.
-var ProtoSelectNewServiceMethodPosition = wrapFinder(
+var ProtoSelectNewServiceMethodPosition = wrapProtoFinder(
 	func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc {
 		return func(node ast.Node) (bool, ast.VisitFunc) {
 			if n, ok := node.(*ast.ServiceNode); ok {
@@ -121,7 +121,7 @@ var ProtoSelectNewServiceMethodPosition = wrapFinder(
 
 // ProtoSelectNewOneOfFieldPosition selects a position for where a new oneof field can be added which is
 // itself present within a message.
-var ProtoSelectNewOneOfFieldPosition = wrapFinder(
+var ProtoSelectNewOneOfFieldPosition = wrapProtoFinder(
 	func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc {
 		initial := false
 		isMsgFound := &initial
