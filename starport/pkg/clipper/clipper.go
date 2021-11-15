@@ -38,3 +38,20 @@ func PasteGeneratedProtoSnippetAt(
 	newContent := code[:offsetPosition] + snippet + code[offsetPosition:]
 	return newContent, nil
 }
+
+// PasteProtoImportSnippetAt pastes an import snippet at the start of the file while making sure that there
+// is an empty space between package declaration and import.
+func PasteProtoImportSnippetAt(code string, snippet string) (string, error) {
+	return PasteGeneratedProtoSnippetAt(
+		code,
+		ProtoSelectNewImportPosition,
+		nil,
+		func(data interface{}) string {
+			shouldAddNewLine := data.(ProtoNewImportPositionData).ShouldAddNewLine
+			if shouldAddNewLine {
+				return fmt.Sprintf("\n%v", snippet)
+			}
+			return snippet
+		},
+	)
+}
