@@ -46,11 +46,11 @@ func TestProtoSelectNewImportPositionForGenesis(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition == nil {
+	if result.OffsetPosition == NoOffsetPosition {
 		t.Fatal("did not find import location")
 	}
 
-	if result.SourcePosition.Line != 2 || result.SourcePosition.Col != 29 {
+	if result.OffsetPosition != 47 {
 		t.Fatal("wrong result found", result)
 	}
 
@@ -65,11 +65,11 @@ func TestProtoSelectNewImportPositionForQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition == nil {
+	if result.OffsetPosition == NoOffsetPosition {
 		t.Fatal("did not find import location")
 	}
 
-	if result.SourcePosition.Line != 5 || result.SourcePosition.Col != 53 {
+	if result.OffsetPosition != 140 {
 		t.Fatal("wrong result found", result)
 	}
 
@@ -86,11 +86,11 @@ func TestProtoSelectNewMessageFieldPosition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition == nil {
+	if result.OffsetPosition == NoOffsetPosition {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 9 || result.SourcePosition.Col != 1 {
+	if result.OffsetPosition != 193 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -103,11 +103,11 @@ func TestProtoSelectNewServiceMethodPosition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition == nil {
+	if result.OffsetPosition == NoOffsetPosition {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 12 || result.SourcePosition.Col != 1 {
+	if result.OffsetPosition != 263 {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -121,7 +121,7 @@ func TestDoNotFindNewOneOfFieldPosition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition != nil {
+	if result.OffsetPosition != NoOffsetPosition {
 		t.Fatal("wrong result found", result)
 	}
 }
@@ -132,11 +132,11 @@ func TestProtoSelectLastPosition(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.SourcePosition == nil {
+	if result.OffsetPosition == NoOffsetPosition {
 		t.Fatal("did not find message")
 	}
 
-	if result.SourcePosition.Line != 12 || result.SourcePosition.Col != 2 {
+	if result.OffsetPosition != 264 {
 		t.Fatal("wrong result found", result)
 	}
 }
