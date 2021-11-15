@@ -7,19 +7,20 @@ import (
 // SnippetGenerator generates a snippet to be pasted based on the given data.
 type SnippetGenerator func(data interface{}) string
 
-// PasteProtoSnippetAt pastes a proto snippet at the location pointed by the selector and returns a new code.
-func PasteProtoSnippetAt(code string, selector ProtoPositionSelector, options SelectOptions, snippet string) (string, error) {
-	return PasteGeneratedProtoSnippetAt(code, selector, options, func(_ interface{}) string {
+// PasteProtoSnippetAt pastes a proto snippet at the location pointed by the selector and returns a new code. The path
+// is only used for context in errors.
+func PasteProtoSnippetAt(path, code string, selector ProtoPositionSelector, options SelectOptions, snippet string) (string, error) {
+	return PasteGeneratedProtoSnippetAt(path, code, selector, options, func(_ interface{}) string {
 		return snippet
 	})
 }
 
 // PasteGeneratedProtoSnippetAt pastes a generated proto snippet at the location pointed by the selector and returns
-// a new code.
+// a new code. The path is only used for context in errors.
 func PasteGeneratedProtoSnippetAt(
-	code string, selector ProtoPositionSelector, options SelectOptions, generator SnippetGenerator,
+	path, code string, selector ProtoPositionSelector, options SelectOptions, generator SnippetGenerator,
 ) (string, error) {
-	result, err := selector(code, options)
+	result, err := selector(path, code, options)
 	if err != nil {
 		return "", err
 	}
@@ -40,9 +41,10 @@ func PasteGeneratedProtoSnippetAt(
 }
 
 // PasteProtoImportSnippetAt pastes an import snippet at the start of the file while making sure that there
-// is an empty space between package declaration and import.
-func PasteProtoImportSnippetAt(code string, snippet string) (string, error) {
+// is an empty space between package declaration and import. The path is only used for context in errors.
+func PasteProtoImportSnippetAt(path, code string, snippet string) (string, error) {
 	return PasteGeneratedProtoSnippetAt(
+		path,
 		code,
 		ProtoSelectNewImportPosition,
 		nil,

@@ -120,7 +120,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
+		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -152,6 +152,7 @@ import "%s/%s.proto";`
 			indexPath,
 		)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -181,7 +182,7 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -210,7 +211,13 @@ message QueryAll%[1]vResponse {
 			opts.TypeName.LowerCamel,
 			queryIndexFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessage)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessage,
+		)
 		if err != nil {
 			return err
 		}
@@ -277,7 +284,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
+		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -285,6 +292,7 @@ import "%[1]v/%[2]v.proto";`
 		templateProtoState := `  repeated %[1]v %[2]vList = %[3]v [(gogoproto.nullable) = false];
 `
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
 			clipper.SelectOptions{
@@ -520,7 +528,7 @@ import "%s/%s.proto";`
 			opts.TypeName.Snake,
 		)
 
-		content, err := clipper.PasteProtoImportSnippetAt(f.String(), importString)
+		content, err := clipper.PasteProtoImportSnippetAt(path, f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -532,6 +540,7 @@ import "%s/%s.proto";`
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.TypeName.UpperCamel)
 		content, err = clipper.PasteProtoSnippetAt(
+			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -567,7 +576,7 @@ import "%s/%s.proto";`
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -597,7 +606,13 @@ message MsgDelete%[1]vResponse {}`
 			indexes,
 			fields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessages,
+		)
 		if err != nil {
 			return err
 		}

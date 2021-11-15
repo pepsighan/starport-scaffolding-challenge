@@ -9,8 +9,9 @@ import (
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
 )
 
-// parseProto parses the code as a protobuf file.
-func parseProto(code string) (*ast.FileNode, error) {
+// parseProto parses the code as a protobuf file. The path is the file path for the code as this provides
+// more context in errors.
+func parseProto(path string, code string) (*ast.FileNode, error) {
 	parser := protoparse.Parser{
 		// protoparse library requires a file to parse, so we modify its accessor
 		// to allow a string to behave as a file.
@@ -19,8 +20,8 @@ func parseProto(code string) (*ast.FileNode, error) {
 		},
 	}
 
-	// It does not matter what filename is passed, it is only going to read the passed code.
-	parsed, err := parser.ParseToAST("file.proto")
+	// It won't read from the path because of above.
+	parsed, err := parser.ParseToAST(path)
 	if err != nil {
 		return nil, err
 	}

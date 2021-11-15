@@ -53,6 +53,7 @@ func protoQueryModify(opts *Options) genny.RunFn {
 			opts.ModuleName,
 		)
 		content, err := clipper.PasteProtoSnippetAt(
+			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
 			clipper.SelectOptions{
@@ -95,7 +96,7 @@ func protoQueryModify(opts *Options) genny.RunFn {
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(content, importModule)
+			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -115,7 +116,13 @@ message Query%[1]vResponse {
 			reqFields,
 			resFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(content, clipper.ProtoSelectLastPosition, nil, replacementMessages)
+		content, err = clipper.PasteProtoSnippetAt(
+			path,
+			content,
+			clipper.ProtoSelectLastPosition,
+			nil,
+			replacementMessages,
+		)
 		if err != nil {
 			return err
 		}
