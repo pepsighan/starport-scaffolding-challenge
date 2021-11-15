@@ -3,7 +3,7 @@ package clipper
 import "testing"
 
 func TestParsingProtoString(t *testing.T) {
-	parsed, err := parseProto(genesisProtoFile)
+	parsed, err := parseProto("test.proto", genesisProtoFile)
 	if err != nil {
 		t.Fatal("could not parse proto string")
 	}
