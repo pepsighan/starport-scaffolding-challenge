@@ -122,7 +122,7 @@ import "%s/%s.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -144,7 +144,7 @@ message QueryGet%[1]vResponse {
 	%[1]v %[1]v = 1 [(gogoproto.nullable) = false];
 }`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.TypeName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -219,7 +219,7 @@ import "%[1]v/%[2]v.proto";`
 
 		templateProtoState := `  %[1]v %[2]v = %[3]v;
 `
-		content, err = clipper.PasteGeneratedProtoSnippetAt(
+		content, err = clipper.PasteGeneratedCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
@@ -407,7 +407,7 @@ import "%s/%s.proto";`
 		replacementRPC := fmt.Sprintf(templateRPC,
 			opts.TypeName.UpperCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -465,7 +465,7 @@ message MsgDelete%[1]vResponse {}`
 			opts.MsgSigner.LowerCamel,
 			fields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,

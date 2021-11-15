@@ -51,7 +51,7 @@ func protoQueryModify(opts *Options) genny.RunFn {
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err := clipper.PasteProtoSnippetAt(
+		content, err := clipper.PasteCodeSnippetAt(
 			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -115,7 +115,7 @@ message Query%[1]vResponse {
 			reqFields,
 			resFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,

@@ -186,7 +186,7 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 		// Add the fld in the module packet
 		templateField := `  %[1]vPacketData %[2]vPacket = %[3]v;
   `
-		content, err = clipper.PasteGeneratedProtoSnippetAt(
+		content, err = clipper.PasteGeneratedCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewOneOfFieldPosition,
@@ -253,7 +253,7 @@ message %[1]vPacketAck {
 			packetFields,
 			ackFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -307,7 +307,7 @@ func protoTxModify(opts *PacketOptions) genny.RunFn {
 			templateRPC,
 			opts.PacketName.UpperCamel,
 		)
-		content, err := clipper.PasteProtoSnippetAt(
+		content, err := clipper.PasteCodeSnippetAt(
 			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -365,7 +365,7 @@ message MsgSend%[1]vResponse {
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,

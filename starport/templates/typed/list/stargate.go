@@ -128,7 +128,7 @@ import "%s/%s.proto";`
   rpc Delete%[1]v(MsgDelete%[1]v) returns (MsgDelete%[1]vResponse);
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.TypeName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -198,7 +198,7 @@ message MsgDelete%[1]vResponse {}`
 			createFields,
 			updateFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -258,7 +258,7 @@ import "%s/%s.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -294,7 +294,7 @@ message QueryAll%[1]vResponse {
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,

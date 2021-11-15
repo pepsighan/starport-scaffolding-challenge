@@ -150,7 +150,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -173,7 +173,7 @@ message QueryLast%[1]vIdRequest {}
 
 message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -217,7 +217,7 @@ import "%[1]v/%[2]v.proto";`
 		templateRPC := `  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -257,7 +257,7 @@ message Msg%[1]vDataResponse {
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,

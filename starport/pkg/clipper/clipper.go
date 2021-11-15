@@ -7,17 +7,17 @@ import (
 // SnippetGenerator generates a snippet to be pasted based on the given data.
 type SnippetGenerator func(data interface{}) string
 
-// PasteProtoSnippetAt pastes a proto snippet at the location pointed by the selector and returns a new code. The path
+// PasteCodeSnippetAt pastes a code snippet at the location pointed by the selector and returns a new code. The path
 // is only used for context in errors.
-func PasteProtoSnippetAt(path, code string, selector PositionSelector, options SelectOptions, snippet string) (string, error) {
-	return PasteGeneratedProtoSnippetAt(path, code, selector, options, func(_ interface{}) string {
+func PasteCodeSnippetAt(path, code string, selector PositionSelector, options SelectOptions, snippet string) (string, error) {
+	return PasteGeneratedCodeSnippetAt(path, code, selector, options, func(_ interface{}) string {
 		return snippet
 	})
 }
 
-// PasteGeneratedProtoSnippetAt pastes a generated proto snippet at the location pointed by the selector and returns
+// PasteGeneratedCodeSnippetAt pastes a generated code snippet at the location pointed by the selector and returns
 // a new code. The path is only used for context in errors.
-func PasteGeneratedProtoSnippetAt(
+func PasteGeneratedCodeSnippetAt(
 	path, code string, selector PositionSelector, options SelectOptions, generator SnippetGenerator,
 ) (string, error) {
 	result, err := selector(path, code, options)
@@ -39,7 +39,7 @@ func PasteGeneratedProtoSnippetAt(
 // PasteProtoImportSnippetAt pastes an import snippet at the start of the file while making sure that there
 // is an empty space between package declaration and import. The path is only used for context in errors.
 func PasteProtoImportSnippetAt(path, code string, snippet string) (string, error) {
-	return PasteGeneratedProtoSnippetAt(
+	return PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		ProtoSelectNewImportPosition,
