@@ -36,11 +36,12 @@ func TestLineOffsetMap(t *testing.T) {
 }
 
 func TestCalcOffsetPositionForProtoSourcePosition(t *testing.T) {
-	offset, err := offsetForProtoSourcePos(genesisProtoFile, &ast.SourcePos{Line: 5, Col: 5})
+	offsetMap, err := lineOffsetMapOfFile(genesisProtoFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	offset := offsetForProtoSourcePos(offsetMap, &ast.SourcePos{Line: 5, Col: 5})
 	if offset != 115 {
 		t.Fatal("wrong offset position calculated", offset)
 	}

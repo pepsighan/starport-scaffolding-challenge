@@ -10,12 +10,6 @@ import (
 // lineOffsetMap is the offset from the base of the code for each line.
 type lineOffsetMap map[int]int
 
-// offsetPosition is the position from the start of the code.
-type offsetPosition int
-
-// noOffsetPosition when there is no position within the code.
-const noOffsetPosition offsetPosition = -1
-
 // lineOffsetMapOfFile gets the offset of each of the lines from the base of the code.
 func lineOffsetMapOfFile(code string) (lineOffsetMap, error) {
 	offsetMap := lineOffsetMap{}
@@ -44,15 +38,10 @@ func lineOffsetMapOfFile(code string) (lineOffsetMap, error) {
 // offsetForProtoSourcePos converts the Proto's source position to an offset position.
 // The ast.SourcePos also has an Offset field, but it is incorrectly implemented (or that
 // I don't understand what the offset actually means in its context).
-func offsetForProtoSourcePos(code string, pos *ast.SourcePos) (offsetPosition, error) {
+func offsetForProtoSourcePos(offsetMap lineOffsetMap, pos *ast.SourcePos) OffsetPosition {
 	if pos == nil {
-		return noOffsetPosition, nil
+		return NoOffsetPosition
 	}
 
-	offsetMap, err := lineOffsetMapOfFile(code)
-	if err != nil {
-		return noOffsetPosition, err
-	}
-
-	return offsetPosition(offsetMap[pos.Line-1] + pos.Col), nil
+	return OffsetPosition(offsetMap[pos.Line-1] + pos.Col)
 }
