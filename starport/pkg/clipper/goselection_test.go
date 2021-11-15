@@ -13,7 +13,7 @@ func TestGoSelectNewImportPositionAfterNoImports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.OffsetPosition != 13 {
+	if result.OffsetPosition != 12 {
 		t.Fatal("invalid new import position", result)
 	}
 
@@ -36,7 +36,7 @@ func TestGoSelectNewImportPositionAfterImports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.OffsetPosition != 31 {
+	if result.OffsetPosition != 30 {
 		t.Fatal("invalid new import position", result)
 	}
 
@@ -63,7 +63,7 @@ func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.OffsetPosition != 58 {
+	if result.OffsetPosition != 57 {
 		t.Fatal("invalid new import position", result)
 	}
 
