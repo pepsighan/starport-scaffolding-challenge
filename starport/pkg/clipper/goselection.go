@@ -42,6 +42,12 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 			OffsetPosition: NoOffsetPosition,
 		}
 		ast.Walk(finder(result, options), parsedAST)
+
+		if result.OffsetPosition != NoOffsetPosition {
+			// The offset position coming from the finder is 1-indexed. So making it 0-indexed.
+			result.OffsetPosition -= 1
+		}
+
 		return result, nil
 	}
 }

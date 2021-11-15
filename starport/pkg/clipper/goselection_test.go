@@ -2,11 +2,13 @@ package clipper
 
 import "testing"
 
-func TestGoSelectNewImportPositionAfterNoImports(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", `package test
+const noImportGoFile = `package test
 
 func main() {}
-`, nil)
+`
+
+func TestGoSelectNewImportPositionAfterNoImports(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", noImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -21,13 +23,15 @@ func main() {}
 	}
 }
 
-func TestGoSelectNewImportPositionAfterImports(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", `package test
+const oneImportGoFile = `package test
 
 import "testing"
 
 func main() {}
-`, nil)
+`
+
+func TestGoSelectNewImportPositionAfterImports(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", oneImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +46,7 @@ func main() {}
 	}
 }
 
-func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", `package test
+const groupImportGoFile = `package test
 
 import (
 	"go/ast"
@@ -52,7 +55,10 @@ import (
 )
 
 func main() {}
-`, nil)
+`
+
+func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", groupImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

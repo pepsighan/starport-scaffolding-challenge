@@ -166,3 +166,26 @@ message NoData {
 		t.Fatal("incorrect generation: \n", generated)
 	}
 }
+
+func TestAddingNewImportAfterPackage(t *testing.T) {
+	generated, err := PasteCodeSnippetAt(
+		"test.go",
+		noImportGoFile,
+		GoSelectNewImportPosition,
+		nil,
+		"\nimport \"fmt\"",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	correct := `package test
+import "fmt"
+
+func main() {}
+`
+
+	if generated != correct {
+		t.Fatal("incorrect generation: \n", generated)
+	}
+}
