@@ -39,3 +39,24 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 		return result, nil
 	}
 }
+
+// GoSelectNewImportLocation selects a position where in a new import can be added.
+var GoSelectNewImportLocation = wrapGoFinder(func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	return func(node ast.Node) bool {
+		switch n := node.(type) {
+		case *ast.Package:
+			// Adds new import after package declaration.
+			result.OffsetPosition = OffsetPosition(n.End())
+		case *ast.ImportSpec:
+			// Adds new import after this one.
+			result.OffsetPosition = OffsetPosition(n.End())
+		case *ast.GenDecl:
+			if n.Tok == token.IMPORT {
+				// Adds new import at the start of the import block.
+				result.OffsetPosition = OffsetPosition(n.Lparen)
+			}
+		}
+
+		return true
+	}
+})
