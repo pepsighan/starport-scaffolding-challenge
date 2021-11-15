@@ -126,20 +126,8 @@ func protoQueryOracleModify(opts *OracleOptions) genny.RunFn {
 		// Import the type
 		templateImport := `
 import "%[1]v/%[2]v.proto";`
-		content, err := clipper.PasteGeneratedProtoSnippetAt(
-			f.String(),
-			clipper.ProtoSelectNewImportPosition,
-			nil,
-			func(data interface{}) string {
-				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-
-				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
-				if shouldAddNewLine {
-					return fmt.Sprintf("\n%v", importString)
-				}
-				return importString
-			},
-		)
+		importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+		content, err := clipper.PasteProtoImportSnippetAt(f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -212,19 +200,8 @@ import "cosmos/base/v1beta1/coin.proto";`, "")
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "%[1]v/%[2]v.proto";`
-		content, err = clipper.PasteGeneratedProtoSnippetAt(
-			content,
-			clipper.ProtoSelectNewImportPosition,
-			nil,
-			func(data interface{}) string {
-				importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-				shouldAddNewLine := data.(clipper.ProtoNewImportPositionData).ShouldAddNewLine
-				if shouldAddNewLine {
-					return fmt.Sprintf("\n%v", importString)
-				}
-				return importString
-			},
-		)
+		importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
+		content, err = clipper.PasteProtoImportSnippetAt(content, importString)
 		if err != nil {
 			return err
 		}
