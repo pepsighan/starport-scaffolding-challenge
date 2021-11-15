@@ -189,3 +189,32 @@ func main() {}
 		t.Fatal("incorrect generation: \n", generated)
 	}
 }
+
+func TestAddingNewImportAfterImportsGroup(t *testing.T) {
+	generated, err := PasteCodeSnippetAt(
+		"test.go",
+		groupImportGoFile,
+		GoSelectNewImportPosition,
+		nil,
+		"\n\t\"fmt\"",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	correct := `package test
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"fmt"
+)
+
+func main() {}
+`
+
+	if generated != correct {
+		t.Fatal("incorrect generation: \n", generated)
+	}
+}
