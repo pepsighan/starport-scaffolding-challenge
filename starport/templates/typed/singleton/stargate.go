@@ -110,11 +110,11 @@ import "%s/%s.proto";`
 
 		// Add the service
 		templateService := `
-  
   // Queries a %[2]v by index.
 	rpc %[1]v(QueryGet%[1]vRequest) returns (QueryGet%[1]vResponse) {
 		option (google.api.http).get = "/%[3]v/%[4]v/%[5]v/%[2]v";
-	}`
+	}
+`
 		replacementService := fmt.Sprintf(templateService,
 			opts.TypeName.UpperCamel,
 			opts.TypeName.LowerCamel,
@@ -137,6 +137,7 @@ import "%s/%s.proto";`
 
 		// Add the service messages
 		templateMessage := `
+
 message QueryGet%[1]vRequest {}
 
 message QueryGet%[1]vResponse {
@@ -216,8 +217,8 @@ import "%[1]v/%[2]v.proto";`
 			return err
 		}
 
-		templateProtoState := `%[1]v %[2]v = %[3]v;
-  `
+		templateProtoState := `  %[1]v %[2]v = %[3]v;
+`
 		content, err = clipper.PasteGeneratedProtoSnippetAt(
 			path,
 			content,
@@ -399,7 +400,7 @@ import "%s/%s.proto";`
 		}
 
 		// RPC service
-		templateRPC := `rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
+		templateRPC := `  rpc Create%[1]v(MsgCreate%[1]v) returns (MsgCreate%[1]vResponse);
   rpc Update%[1]v(MsgUpdate%[1]v) returns (MsgUpdate%[1]vResponse);
   rpc Delete%[1]v(MsgDelete%[1]v) returns (MsgDelete%[1]vResponse);
 `
