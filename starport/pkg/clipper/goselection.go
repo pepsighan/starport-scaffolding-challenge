@@ -6,6 +6,12 @@ import (
 	"go/token"
 )
 
+// GoNewImportPositionData stores data collected during a selection of a new import position.
+type GoNewImportPositionData struct {
+	ShouldAddNewLine bool
+	OnlyURLNeeded    bool
+}
+
 // goPositionFinder tries to find a required position during a walk of the Golang AST.
 type goPositionFinder func(result *PositionSelectorResult, options SelectOptions) goVisitor
 
@@ -40,20 +46,28 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 	}
 }
 
-// GoSelectNewImportLocation selects a position where in a new import can be added.
-var GoSelectNewImportLocation = wrapGoFinder(func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+// GoSelectNewImportPosition selects a position where in a new import can be added.
+var GoSelectNewImportPosition = wrapGoFinder(func(result *PositionSelectorResult, options SelectOptions) goVisitor {
 	return func(node ast.Node) bool {
 		switch n := node.(type) {
 		case *ast.File:
-			// Adds new import after package declaration.
+			// Adds new import after package declaration: `package name`.
 			result.OffsetPosition = OffsetPosition(n.Name.End())
-		case *ast.ImportSpec:
-			// Adds new import after this one.
-			result.OffsetPosition = OffsetPosition(n.End())
+			result.Data = GoNewImportPositionData{
+				ShouldAddNewLine: true,
+			}
 		case *ast.GenDecl:
 			if n.Tok == token.IMPORT {
 				// Adds new import after the last import URL.
-				result.OffsetPosition = OffsetPosition(n.Specs[0].End())
+				result.OffsetPosition = OffsetPosition(n.Specs[len(n.Specs)-1].End())
+				result.Data = GoNewImportPositionData{}
+
+				// If this is a group import, only URL is needed for the new one.
+				if n.Lparen != token.NoPos {
+					result.Data = GoNewImportPositionData{
+						OnlyURLNeeded: true,
+					}
+				}
 			}
 		}
 

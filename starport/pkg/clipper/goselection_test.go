@@ -2,8 +2,8 @@ package clipper
 
 import "testing"
 
-func TestGoSelectNewImportLocationAfterNoImports(t *testing.T) {
-	result, err := GoSelectNewImportLocation("test.go", `package test
+func TestGoSelectNewImportPositionAfterNoImports(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", `package test
 
 func main() {}
 `, nil)
@@ -14,10 +14,15 @@ func main() {}
 	if result.OffsetPosition != 13 {
 		t.Fatal("invalid new import position", result)
 	}
+
+	data := result.Data.(GoNewImportPositionData)
+	if data.OnlyURLNeeded || !data.ShouldAddNewLine {
+		t.Fatal("invalid new import data", result)
+	}
 }
 
-func TestGoSelectNewImportLocationAfterImports(t *testing.T) {
-	result, err := GoSelectNewImportLocation("test.go", `package test
+func TestGoSelectNewImportPositionAfterImports(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", `package test
 
 import "testing"
 
@@ -30,10 +35,15 @@ func main() {}
 	if result.OffsetPosition != 31 {
 		t.Fatal("invalid new import position", result)
 	}
+
+	data := result.Data.(GoNewImportPositionData)
+	if data.OnlyURLNeeded || data.ShouldAddNewLine {
+		t.Fatal("invalid new import data", result)
+	}
 }
 
-func TestGoSelectNewImportLocationAfterImportsGroup(t *testing.T) {
-	result, err := GoSelectNewImportLocation("test.go", `package test
+func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
+	result, err := GoSelectNewImportPosition("test.go", `package test
 
 import (
 	"go/ast"
@@ -49,5 +59,10 @@ func main() {}
 
 	if result.OffsetPosition != 58 {
 		t.Fatal("invalid new import position", result)
+	}
+
+	data := result.Data.(GoNewImportPositionData)
+	if !data.OnlyURLNeeded || data.ShouldAddNewLine {
+		t.Fatal("invalid new import data", result)
 	}
 }
