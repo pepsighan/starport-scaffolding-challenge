@@ -12,6 +12,11 @@ type GoNewImportPositionData struct {
 	OnlyURLNeeded    bool
 }
 
+// GoSelectBeforeFunctionReturnsPositionData stores data collected during a selection of the position before a return.
+type GoSelectBeforeFunctionReturnsPositionData struct {
+	HasReturn bool
+}
+
 // goPositionFinder tries to find a required position during a walk of the Golang AST.
 type goPositionFinder func(result *PositionSelectorResult, options SelectOptions) goVisitor
 
@@ -118,9 +123,15 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 				case *ast.ReturnStmt:
 					// If there is a return, select a position before it.
 					result.OffsetPosition = OffsetPosition(l.Pos())
+					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+						HasReturn: true,
+					}
 				default:
 					// Select the last position as there is no return here.
 					result.OffsetPosition = OffsetPosition(lastItem.End())
+					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+						HasReturn: false,
+					}
 				}
 			}
 
