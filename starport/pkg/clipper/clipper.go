@@ -53,3 +53,21 @@ func PasteProtoImportSnippetAt(path, code string, snippet string) (string, error
 		},
 	)
 }
+
+// PasteGoBeforeReturnSnippetAt pastes a Golang snippet right before a function returns at the end of the function
+// block.
+func PasteGoBeforeReturnSnippetAt(path, code string, snippet string, options SelectOptions) (string, error) {
+	return PasteGeneratedCodeSnippetAt(
+		path,
+		code,
+		GoSelectBeforeFunctionReturnsPosition,
+		options,
+		func(data interface{}) string {
+			hasReturn := data.(GoSelectBeforeFunctionReturnsPositionData).HasReturn
+			if hasReturn {
+				return fmt.Sprintf("%v\n\t", snippet)
+			}
+			return fmt.Sprintf("\n\t%v", snippet)
+		},
+	)
+}

@@ -386,12 +386,22 @@ func clientCliTxModify(replacer placeholder.Replacer, opts *typed.Options) genny
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdCreate%[2]v())
-	cmd.AddCommand(CmdUpdate%[2]v())
-	cmd.AddCommand(CmdDelete%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, typed.Placeholder, opts.TypeName.UpperCamel)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacement)
+		template := `cmd.AddCommand(CmdCreate%[1]v())
+	cmd.AddCommand(CmdUpdate%[1]v())
+	cmd.AddCommand(CmdDelete%[1]v())`
+		snippet := fmt.Sprintf(template, opts.TypeName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(
+			path,
+			f.String(),
+			snippet,
+			clipper.SelectOptions{
+				"functionName": "GetTxCmd",
+			},
+		)
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
