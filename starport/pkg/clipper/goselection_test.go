@@ -80,7 +80,7 @@ func TestGoSelectNewGlobalPositionAfterNoImports(t *testing.T) {
 	}
 
 	if result.OffsetPosition != 12 {
-		t.Fatal("invalid new import position", result)
+		t.Fatal("invalid new global position", result)
 	}
 }
 
@@ -91,6 +91,48 @@ func TestGoSelectNewGlobalPositionAfterImports(t *testing.T) {
 	}
 
 	if result.OffsetPosition != 59 {
-		t.Fatal("invalid new import position", result)
+		t.Fatal("invalid new global position", result)
+	}
+}
+
+const withReturnGoFile = `package rets
+
+func withReturn() int {
+	a := 5
+	return a
+}
+`
+
+func TestGoSelectBeforeFunctionReturnsPositionWithReturn(t *testing.T) {
+	result, err := GoSelectBeforeFunctionReturnsPosition("test.go", withReturnGoFile, SelectOptions{
+		"functionName": "withReturn",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 47 {
+		t.Fatal("invalid new position before return", result)
+	}
+}
+
+const noReturnGoFile = `package rets
+
+func withNoReturn() int {
+	a := 5
+	fmt.Println(a)
+}
+`
+
+func TestGoSelectBeforeFunctionReturnsPositionWithNoReturn(t *testing.T) {
+	result, err := GoSelectBeforeFunctionReturnsPosition("test.go", noReturnGoFile, SelectOptions{
+		"functionName": "withNoReturn",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 63 {
+		t.Fatal("invalid new position at function end", result)
 	}
 }
