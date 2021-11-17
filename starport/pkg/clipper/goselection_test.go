@@ -72,3 +72,25 @@ func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
 		t.Fatal("invalid new import data", result)
 	}
 }
+
+func TestGoSelectNewGlobalPositionAfterNoImports(t *testing.T) {
+	result, err := GoSelectNewGlobalPosition("test.go", noImportGoFile, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 12 {
+		t.Fatal("invalid new import position", result)
+	}
+}
+
+func TestGoSelectNewGlobalPositionAfterImports(t *testing.T) {
+	result, err := GoSelectNewGlobalPosition("test.go", groupImportGoFile, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 59 {
+		t.Fatal("invalid new import position", result)
+	}
+}
