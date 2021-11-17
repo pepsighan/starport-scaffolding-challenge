@@ -102,3 +102,29 @@ var GoSelectNewGlobalPosition = wrapGoFinder(
 		}
 	},
 )
+
+// GoSelectBeforeFunctionReturnsPosition selects a position just before the last function return (implicit or explicit).
+// This only considers the function return which is at the function return.
+var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			// Select a position after the package declaration or all the imports.
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				lastItem := n.Body.List[len(n.Body.List)-1]
+
+				switch l := lastItem.(type) {
+				case *ast.ReturnStmt:
+					// If there is a return, select a position before it.
+					result.OffsetPosition = OffsetPosition(l.Pos())
+				default:
+					// Select the last position as there is no return here.
+					result.OffsetPosition = OffsetPosition(lastItem.End())
+				}
+			}
+
+			return true
+		}
+	},
+)
