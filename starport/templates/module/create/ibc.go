@@ -74,10 +74,13 @@ if !k.IsBound(ctx, genState.PortId) {
 		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementInit)
 
 		// Genesis export
-		templateExport := `genesis.PortId = k.GetPort(ctx)
-%s`
-		replacementExport := fmt.Sprintf(templateExport, typed.PlaceholderGenesisModuleExport)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementExport)
+		templateExport := `genesis.PortId = k.GetPort(ctx)`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

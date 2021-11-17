@@ -364,19 +364,22 @@ if genState.%[3]v != nil {
 		)
 		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
 
-		templateModuleExport := `// Get all %[2]v
-%[2]v, found := k.Get%[3]v(ctx)
-if found {
-	genesis.%[3]v = &%[2]v
-}
-%[1]v`
-		replacementModuleExport := fmt.Sprintf(
+		templateModuleExport := `// Get all %[1]v
+  %[1]v, found := k.Get%[2]v(ctx)
+  if found {
+	  genesis.%[2]v = &%[1]v
+  }`
+		moduleExport := fmt.Sprintf(
 			templateModuleExport,
-			typed.PlaceholderGenesisModuleExport,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementModuleExport)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, moduleExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

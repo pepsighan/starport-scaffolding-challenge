@@ -147,15 +147,18 @@ k.Set%[3]vCount(ctx, genState.%[3]vCount)
 		)
 		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
 
-		templateModuleExport := `genesis.%[2]vList = k.GetAll%[2]v(ctx)
-genesis.%[2]vCount = k.Get%[2]vCount(ctx)
-%[1]v`
-		replacementModuleExport := fmt.Sprintf(
+		templateModuleExport := `genesis.%[1]vList = k.GetAll%[1]v(ctx)
+  genesis.%[1]vCount = k.Get%[1]vCount(ctx)`
+		moduleExport := fmt.Sprintf(
 			templateModuleExport,
-			typed.PlaceholderGenesisModuleExport,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementModuleExport)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, moduleExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
