@@ -45,7 +45,7 @@ func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Gener
 	g.RunFn(protoTxOracleModify(opts))
 	g.RunFn(handlerTxOracleModify(replacer, opts))
 	g.RunFn(clientCliQueryOracleModify(replacer, opts))
-	g.RunFn(clientCliTxOracleModify(replacer, opts))
+	g.RunFn(clientCliTxOracleModify(opts))
 	g.RunFn(codecOracleModify(replacer, opts))
 
 	ctx := plush.NewContext()
@@ -314,17 +314,22 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 	}
 }
 
-func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func clientCliTxOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdRequest%[2]vData())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.QueryName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(CmdRequest%[1]vData())`
+		snippet := fmt.Sprintf(template, opts.QueryName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

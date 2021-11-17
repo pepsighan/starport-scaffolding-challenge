@@ -20,7 +20,7 @@ func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator
 	g.RunFn(protoTxRPCModify(opts))
 	g.RunFn(protoTxMessageModify(opts))
 	g.RunFn(typesCodecModify(replacer, opts))
-	g.RunFn(clientCliTxModify(replacer, opts))
+	g.RunFn(clientCliTxModify(opts))
 	g.RunFn(moduleSimulationModify(replacer, opts))
 
 	template := xgenny.NewEmbedWalker(
@@ -186,17 +186,22 @@ func typesCodecModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 	}
 }
 
-func clientCliTxModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func clientCliTxModify(opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(Cmd%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.MsgName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(Cmd%[1]v())`
+		snippet := fmt.Sprintf(template, opts.MsgName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

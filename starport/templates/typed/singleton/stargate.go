@@ -54,7 +54,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 	if !opts.NoMessage {
 		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerModify(replacer, opts))
-		g.RunFn(clientCliTxModify(replacer, opts))
+		g.RunFn(clientCliTxModify(opts))
 		g.RunFn(typesCodecModify(replacer, opts))
 		g.RunFn(moduleSimulationModify(replacer, opts))
 
@@ -513,19 +513,24 @@ func handlerModify(replacer placeholder.Replacer, opts *typed.Options) genny.Run
 	}
 }
 
-func clientCliTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func clientCliTxModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdCreate%[2]v())
-	cmd.AddCommand(CmdUpdate%[2]v())
-	cmd.AddCommand(CmdDelete%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, typed.Placeholder, opts.TypeName.UpperCamel)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacement)
+		template := `cmd.AddCommand(CmdCreate%[1]v())
+	cmd.AddCommand(CmdUpdate%[1]v())
+	cmd.AddCommand(CmdDelete%[1]v())`
+		snippet := fmt.Sprintf(template, opts.TypeName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
