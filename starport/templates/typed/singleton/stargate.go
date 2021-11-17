@@ -54,7 +54,7 @@ func NewStargate(replacer placeholder.Replacer, opts *typed.Options) (*genny.Gen
 	if !opts.NoMessage {
 		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerModify(replacer, opts))
-		g.RunFn(clientCliTxModify(replacer, opts))
+		g.RunFn(clientCliTxModify(opts))
 		g.RunFn(typesCodecModify(replacer, opts))
 		g.RunFn(moduleSimulationModify(replacer, opts))
 
@@ -122,7 +122,7 @@ import "%s/%s.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -144,7 +144,7 @@ message QueryGet%[1]vResponse {
 	%[1]v %[1]v = 1 [(gogoproto.nullable) = false];
 }`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.TypeName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -185,12 +185,17 @@ func clientCliQueryModify(replacer placeholder.Replacer, opts *typed.Options) ge
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdShow%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, typed.Placeholder,
+		template := `cmd.AddCommand(CmdShow%[1]v())`
+		snippet := fmt.Sprintf(template,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacement)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetQueryCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
@@ -219,7 +224,7 @@ import "%[1]v/%[2]v.proto";`
 
 		templateProtoState := `  %[1]v %[2]v = %[3]v;
 `
-		content, err = clipper.PasteGeneratedProtoSnippetAt(
+		content, err = clipper.PasteGeneratedCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewMessageFieldPosition,
@@ -407,7 +412,7 @@ import "%s/%s.proto";`
 		replacementRPC := fmt.Sprintf(templateRPC,
 			opts.TypeName.UpperCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -465,7 +470,7 @@ message MsgDelete%[1]vResponse {}`
 			opts.MsgSigner.LowerCamel,
 			fields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -513,19 +518,24 @@ func handlerModify(replacer placeholder.Replacer, opts *typed.Options) genny.Run
 	}
 }
 
-func clientCliTxModify(replacer placeholder.Replacer, opts *typed.Options) genny.RunFn {
+func clientCliTxModify(opts *typed.Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdCreate%[2]v())
-	cmd.AddCommand(CmdUpdate%[2]v())
-	cmd.AddCommand(CmdDelete%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, typed.Placeholder, opts.TypeName.UpperCamel)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacement)
+		template := `cmd.AddCommand(CmdCreate%[1]v())
+	cmd.AddCommand(CmdUpdate%[1]v())
+	cmd.AddCommand(CmdDelete%[1]v())`
+		snippet := fmt.Sprintf(template, opts.TypeName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

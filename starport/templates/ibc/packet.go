@@ -70,7 +70,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 	if !opts.NoMessage {
 		g.RunFn(protoTxModify(opts))
 		g.RunFn(handlerTxModify(replacer, opts))
-		g.RunFn(clientCliTxModify(replacer, opts))
+		g.RunFn(clientCliTxModify(opts))
 		g.RunFn(codecModify(replacer, opts))
 		if err := g.Box(messagesTemplate); err != nil {
 			return g, err
@@ -186,7 +186,7 @@ func protoModify(opts *PacketOptions) genny.RunFn {
 		// Add the fld in the module packet
 		templateField := `  %[1]vPacketData %[2]vPacket = %[3]v;
   `
-		content, err = clipper.PasteGeneratedProtoSnippetAt(
+		content, err = clipper.PasteGeneratedCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewOneOfFieldPosition,
@@ -253,7 +253,7 @@ message %[1]vPacketAck {
 			packetFields,
 			ackFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -307,7 +307,7 @@ func protoTxModify(opts *PacketOptions) genny.RunFn {
 			templateRPC,
 			opts.PacketName.UpperCamel,
 		)
-		content, err := clipper.PasteProtoSnippetAt(
+		content, err := clipper.PasteCodeSnippetAt(
 			path,
 			f.String(),
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -365,7 +365,7 @@ message MsgSend%[1]vResponse {
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -407,17 +407,22 @@ func handlerTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.R
 	}
 }
 
-func clientCliTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func clientCliTxModify(opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdSend%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.PacketName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(CmdSend%[1]v())`
+		snippet := fmt.Sprintf(template, opts.PacketName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

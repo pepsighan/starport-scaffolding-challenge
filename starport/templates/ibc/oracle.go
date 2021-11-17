@@ -45,7 +45,7 @@ func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Gener
 	g.RunFn(protoTxOracleModify(opts))
 	g.RunFn(handlerTxOracleModify(replacer, opts))
 	g.RunFn(clientCliQueryOracleModify(replacer, opts))
-	g.RunFn(clientCliTxOracleModify(replacer, opts))
+	g.RunFn(clientCliTxOracleModify(opts))
 	g.RunFn(codecOracleModify(replacer, opts))
 
 	ctx := plush.NewContext()
@@ -150,7 +150,7 @@ import "%[1]v/%[2]v.proto";`
 			opts.AppName,
 			opts.ModuleName,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -173,7 +173,7 @@ message QueryLast%[1]vIdRequest {}
 
 message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
 		replacementMessage := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -217,7 +217,7 @@ import "%[1]v/%[2]v.proto";`
 		templateRPC := `  rpc %[1]vData(Msg%[1]vData) returns (Msg%[1]vDataResponse);
 `
 		replacementRPC := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectNewServiceMethodPosition,
@@ -257,7 +257,7 @@ message Msg%[1]vDataResponse {
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content, err = clipper.PasteProtoSnippetAt(
+		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -303,28 +303,37 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 		if err != nil {
 			return err
 		}
-		template := `
-	cmd.AddCommand(Cmd%[2]vResult())
-	cmd.AddCommand(CmdLast%[2]vID())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.QueryName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(Cmd%[1]vResult())
+	cmd.AddCommand(CmdLast%[1]vID())`
+		snippet := fmt.Sprintf(template, opts.QueryName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetQueryCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func clientCliTxOracleModify(opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdRequest%[2]vData())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.QueryName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(CmdRequest%[1]vData())`
+		snippet := fmt.Sprintf(template, opts.QueryName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetTxCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

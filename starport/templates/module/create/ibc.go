@@ -129,7 +129,7 @@ func genesisProtoModify(opts *CreateOptions) genny.RunFn {
 		// Determine the new field number
 		snippet := `  string port_id = %v;
 `
-		content, err := clipper.PasteGeneratedProtoSnippetAt(
+		content, err := clipper.PasteGeneratedCodeSnippetAt(
 			path,
 			f.String(),
 			clipper.ProtoSelectNewMessageFieldPosition,
