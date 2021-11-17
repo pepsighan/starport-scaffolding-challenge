@@ -139,15 +139,17 @@ func cliQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
 			return err
 		}
 
-		template := `cmd.AddCommand(Cmd%[2]v())
-
-%[1]v`
-		replacement := fmt.Sprintf(
+		template := `cmd.AddCommand(Cmd%[1]v())`
+		snippet := fmt.Sprintf(
 			template,
-			Placeholder,
 			opts.QueryName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetQueryCmd",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

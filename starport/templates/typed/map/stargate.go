@@ -252,13 +252,18 @@ func clientCliQueryModify(replacer placeholder.Replacer, opts *typed.Options) ge
 		if err != nil {
 			return err
 		}
-		template := `cmd.AddCommand(CmdList%[2]v())
-	cmd.AddCommand(CmdShow%[2]v())
-%[1]v`
-		replacement := fmt.Sprintf(template, typed.Placeholder,
+		template := `cmd.AddCommand(CmdList%[1]v())
+	cmd.AddCommand(CmdShow%[1]v())`
+		snippet := fmt.Sprintf(template,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.Placeholder, replacement)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetQueryCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}

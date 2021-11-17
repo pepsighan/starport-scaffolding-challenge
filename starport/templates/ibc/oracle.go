@@ -303,12 +303,16 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 		if err != nil {
 			return err
 		}
-		template := `
-	cmd.AddCommand(Cmd%[2]vResult())
-	cmd.AddCommand(CmdLast%[2]vID())
-%[1]v`
-		replacement := fmt.Sprintf(template, Placeholder, opts.QueryName.UpperCamel)
-		content := replacer.Replace(f.String(), Placeholder, replacement)
+		template := `cmd.AddCommand(Cmd%[1]vResult())
+	cmd.AddCommand(CmdLast%[1]vID())`
+		snippet := fmt.Sprintf(template, opts.QueryName.UpperCamel)
+		content, err := clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			"functionName": "GetQueryCmd",
+		})
+		if err != nil {
+			return err
+		}
+
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
