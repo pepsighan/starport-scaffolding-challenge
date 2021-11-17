@@ -128,3 +128,17 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 		}
 	},
 )
+
+// GoSelectStartOfFunctionPosition selects a position just after the function block starts.
+var GoSelectStartOfFunctionPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				result.OffsetPosition = OffsetPosition(n.Body.Lbrace)
+			}
+			return true
+		}
+	},
+)
