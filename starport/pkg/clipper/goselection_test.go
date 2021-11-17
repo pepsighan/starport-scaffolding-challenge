@@ -136,3 +136,16 @@ func TestGoSelectBeforeFunctionReturnsPositionWithNoReturn(t *testing.T) {
 		t.Fatal("invalid new position at function end", result)
 	}
 }
+
+func TestGoSelectStartOfFunctionPosition(t *testing.T) {
+	result, err := GoSelectStartOfFunctionPosition("test.go", noImportGoFile, SelectOptions{
+		"functionName": "main",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 27 {
+		t.Fatal("invalid function block start position", result)
+	}
+}

@@ -136,7 +136,8 @@ var GoSelectStartOfFunctionPosition = wrapGoFinder(
 
 		return func(node ast.Node) bool {
 			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
-				result.OffsetPosition = OffsetPosition(n.Body.Lbrace)
+				// Select the position after the left brace.
+				result.OffsetPosition = OffsetPosition(n.Body.Lbrace + 1)
 			}
 			return true
 		}
