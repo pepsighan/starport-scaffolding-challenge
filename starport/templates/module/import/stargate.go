@@ -73,14 +73,16 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 		templateDeclaration := `%[1]v
 		scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasm.ModuleName)
 		`
-		replacementDeclaration := fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppScopedKeeper)
-		content = replacer.Replace(content, module.PlaceholderSgAppScopedKeeper, replacementDeclaration)
+		snippet := fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppScopedKeeper)
+		content = replacer.Replace(content, module.PlaceholderSgAppScopedKeeper, snippet)
 
-		templateDeclaration = `%[1]v
-		app.scopedWasmKeeper = scopedWasmKeeper
-		`
-		replacementDeclaration = fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppBeforeInitReturn)
-		content = replacer.Replace(content, module.PlaceholderSgAppBeforeInitReturn, replacementDeclaration)
+		beforeInitReturnSnippet := `app.scopedWasmKeeper = scopedWasmKeeper`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeInitReturnSnippet, clipper.SelectOptions{
+			"functionName": "New",
+		})
+		if err != nil {
+			return err
+		}
 
 		templateStoreKey := `%[1]v
 		wasm.StoreKey,`
