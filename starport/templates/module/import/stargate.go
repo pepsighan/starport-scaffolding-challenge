@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
 	"github.com/tendermint/starport/starport/templates/module"
@@ -134,10 +135,13 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 		replacementInitGenesis := fmt.Sprintf(templateInitGenesis, module.PlaceholderSgAppInitGenesis)
 		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, replacementInitGenesis)
 
-		templateParamSubspace := `%[1]v
-		paramsKeeper.Subspace(wasm.ModuleName)`
-		replacementParamSubspace := fmt.Sprintf(templateParamSubspace, module.PlaceholderSgAppParamSubspace)
-		content = replacer.Replace(content, module.PlaceholderSgAppParamSubspace, replacementParamSubspace)
+		beforeReturnSnippet := `paramsKeeper.Subspace(wasm.ModuleName)`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "initParamsKeeper",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

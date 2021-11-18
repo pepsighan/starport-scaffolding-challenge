@@ -8,6 +8,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
@@ -95,14 +96,14 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		%[2]vmodulekeeper "%[3]v/x/%[2]v/keeper"
 		%[2]vmoduletypes "%[3]v/x/%[2]v/types"
 %[1]v`
-		replacement := fmt.Sprintf(template, module.PlaceholderSgAppModuleImport, opts.ModuleName, opts.ModulePath)
-		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, replacement)
+		snippet := fmt.Sprintf(template, module.PlaceholderSgAppModuleImport, opts.ModuleName, opts.ModulePath)
+		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, snippet)
 
 		// ModuleBasic
 		template = `%[2]vmodule.AppModuleBasic{},
 %[1]v`
-		replacement = fmt.Sprintf(template, module.PlaceholderSgAppModuleBasic, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, replacement)
+		snippet = fmt.Sprintf(template, module.PlaceholderSgAppModuleBasic, opts.ModuleName)
+		content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, snippet)
 
 		// Keeper declaration
 		var scopedKeeperDeclaration string
@@ -114,20 +115,20 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		template = `%[3]v
 		%[4]vKeeper %[2]vmodulekeeper.Keeper
 %[1]v`
-		replacement = fmt.Sprintf(
+		snippet = fmt.Sprintf(
 			template,
 			module.PlaceholderSgAppKeeperDeclaration,
 			opts.ModuleName,
 			scopedKeeperDeclaration,
 			strings.Title(opts.ModuleName),
 		)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, replacement)
+		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
 
 		// Store key
 		template = `%[2]vmoduletypes.StoreKey,
 %[1]v`
-		replacement = fmt.Sprintf(template, module.PlaceholderSgAppStoreKey, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, replacement)
+		snippet = fmt.Sprintf(template, module.PlaceholderSgAppStoreKey, opts.ModuleName)
+		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
 
 		// Module dependencies
 		var depArgs string
@@ -139,12 +140,12 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 				template = `%[2]vmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 %[1]v`
 
-				replacement = fmt.Sprintf(
+				snippet = fmt.Sprintf(
 					template,
 					module.PlaceholderSgAppMaccPerms,
 					opts.ModuleName,
 				)
-				content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, replacement)
+				content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
 			}
 		}
 
@@ -168,7 +169,7 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		%[2]vModule := %[2]vmodule.NewAppModule(appCodec, app.%[5]vKeeper, app.AccountKeeper, app.BankKeeper)
 
 		%[1]v`
-		replacement = fmt.Sprintf(
+		snippet = fmt.Sprintf(
 			template,
 			module.PlaceholderSgAppKeeperDefinition,
 			opts.ModuleName,
@@ -177,25 +178,29 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 			strings.Title(opts.ModuleName),
 			depArgs,
 		)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDefinition, replacement)
+		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDefinition, snippet)
 
 		// App Module
 		template = `%[2]vModule,
 %[1]v`
-		replacement = fmt.Sprintf(template, module.PlaceholderSgAppAppModule, opts.ModuleName)
-		content = replacer.ReplaceAll(content, module.PlaceholderSgAppAppModule, replacement)
+		snippet = fmt.Sprintf(template, module.PlaceholderSgAppAppModule, opts.ModuleName)
+		content = replacer.ReplaceAll(content, module.PlaceholderSgAppAppModule, snippet)
 
 		// Init genesis
 		template = `%[2]vmoduletypes.ModuleName,
 %[1]v`
-		replacement = fmt.Sprintf(template, module.PlaceholderSgAppInitGenesis, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, replacement)
+		snippet = fmt.Sprintf(template, module.PlaceholderSgAppInitGenesis, opts.ModuleName)
+		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
 
 		// Param subspace
-		template = `paramsKeeper.Subspace(%[2]vmoduletypes.ModuleName)
-%[1]v`
-		replacement = fmt.Sprintf(template, module.PlaceholderSgAppParamSubspace, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppParamSubspace, replacement)
+		template = `paramsKeeper.Subspace(%[1]vmoduletypes.ModuleName)`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
+			"functionName": "initParamsKeeper",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
