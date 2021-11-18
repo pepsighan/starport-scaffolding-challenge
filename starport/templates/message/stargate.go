@@ -215,12 +215,16 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *Options) genny.
 			return err
 		}
 
-		content := typed.ModuleSimulationMsgModify(
+		content, err := typed.ModuleSimulationMsgModify(
 			replacer,
+			path,
 			f.String(),
 			opts.ModuleName,
 			opts.MsgName,
 		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
