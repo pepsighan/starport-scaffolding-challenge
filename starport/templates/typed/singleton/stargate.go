@@ -299,14 +299,17 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 		content := replacer.Replace(f.String(), module.PlaceholderGenesisTestState, replacementState)
 
-		templateAssert := `require.Equal(t, genesisState.%[2]v, got.%[2]v)
-%[1]v`
-		replacementTests := fmt.Sprintf(
+		templateAssert := `require.Equal(t, genesisState.%[1]v, got.%[1]v)`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateAssert,
-			module.PlaceholderGenesisTestAssert,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, module.PlaceholderGenesisTestAssert, replacementTests)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "TestGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
