@@ -384,18 +384,28 @@ func genesisModuleModify(replacer placeholder.Replacer, opts *typed.Options) gen
 			return err
 		}
 
-		templateModuleInit := `// Set all the %[2]v
-for _, elem := range genState.%[3]vList {
-	k.Set%[3]v(ctx, elem)
-}
-%[1]v`
-		replacementModuleInit := fmt.Sprintf(
+		templateModuleInit := `
+  // Set all the %[1]v
+  for _, elem := range genState.%[2]vList {
+	  k.Set%[2]v(ctx, elem)
+  }`
+		moduleInitSnippet := fmt.Sprintf(
 			templateModuleInit,
-			typed.PlaceholderGenesisModuleInit,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			moduleInitSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		templateModuleExport := `genesis.%[1]vList = k.GetAll%[1]v(ctx)`
 		moduleExport := fmt.Sprintf(

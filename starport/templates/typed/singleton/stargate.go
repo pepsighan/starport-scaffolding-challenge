@@ -354,18 +354,27 @@ func genesisModuleModify(replacer placeholder.Replacer, opts *typed.Options) gen
 			return err
 		}
 
-		templateModuleInit := `// Set if defined
-if genState.%[3]v != nil {
-	k.Set%[3]v(ctx, *genState.%[3]v)
-}
-%[1]v`
-		replacementModuleInit := fmt.Sprintf(
+		templateModuleInit := `
+	// Set if defined
+	if genState.%[1]v != nil {
+		k.Set%[1]v(ctx, *genState.%[1]v)
+	}`
+		moduleInitSnippet := fmt.Sprintf(
 			templateModuleInit,
-			typed.PlaceholderGenesisModuleInit,
-			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			moduleInitSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		templateModuleExport := `// Get all %[1]v
   %[1]v, found := k.Get%[2]v(ctx)

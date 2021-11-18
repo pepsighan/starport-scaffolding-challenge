@@ -58,20 +58,30 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 		}
 
 		// Genesis init
-		templateInit := `%s
-k.SetPort(ctx, genState.PortId)
-// Only try to bind to port if it is not already bound, since we may already own
-// port capability from capability InitGenesis
-if !k.IsBound(ctx, genState.PortId) {
-	// module binds to the port on InitChain
-	// and claims the returned capability
-	err := k.BindPort(ctx, genState.PortId)
-	if err != nil {
-		panic("could not claim port capability: " + err.Error())
-	}
-}`
-		replacementInit := fmt.Sprintf(templateInit, typed.PlaceholderGenesisModuleInit)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementInit)
+		initSnippet := `
+	k.SetPort(ctx, genState.PortId)
+	// Only try to bind to port if it is not already bound, since we may already own
+	// port capability from capability InitGenesis
+	if !k.IsBound(ctx, genState.PortId) {
+		// module binds to the port on InitChain
+		// and claims the returned capability
+		err := k.BindPort(ctx, genState.PortId)
+		if err != nil {
+			panic("could not claim port capability: " + err.Error())
+		}
+	}`
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			initSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Genesis export
 		templateExport := `genesis.PortId = k.GetPort(ctx)`
