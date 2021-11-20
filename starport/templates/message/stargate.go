@@ -160,26 +160,46 @@ func typesCodecModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 		replacementImport := `sdk "github.com/cosmos/cosmos-sdk/types"`
 		content := replacer.ReplaceOnce(f.String(), Placeholder, replacementImport)
 
-		templateRegisterConcrete := `cdc.RegisterConcrete(&Msg%[2]v{}, "%[3]v/%[2]v", nil)
-%[1]v`
-		replacementRegisterConcrete := fmt.Sprintf(
+		templateRegisterConcrete := `
+	cdc.RegisterConcrete(&Msg%[1]v{}, "%[2]v/%[1]v", nil)`
+		startOfFunctionSnippet := fmt.Sprintf(
 			templateRegisterConcrete,
-			Placeholder2,
 			opts.MsgName.UpperCamel,
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, Placeholder2, replacementRegisterConcrete)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterCodec",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
-		templateRegisterImplementations := `registry.RegisterImplementations((*sdk.Msg)(nil),
-	&Msg%[2]v{},
-)
-%[1]v`
-		replacementRegisterImplementations := fmt.Sprintf(
+		templateRegisterImplementations := `
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&Msg%[1]v{},
+	)`
+		startOfFunctionSnippet = fmt.Sprintf(
 			templateRegisterImplementations,
-			Placeholder3,
 			opts.MsgName.UpperCamel,
 		)
-		content = replacer.Replace(content, Placeholder3, replacementRegisterImplementations)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

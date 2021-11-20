@@ -441,23 +441,44 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		content := replacer.ReplaceOnce(f.String(), module.Placeholder, replacement)
 
 		// Register the module packet
-		templateRegistry := `cdc.RegisterConcrete(&MsgSend%[2]v{}, "%[3]v/Send%[2]v", nil)
-%[1]v`
-		replacementRegistry := fmt.Sprintf(
+		templateRegistry := `
+	cdc.RegisterConcrete(&MsgSend%[1]v{}, "%[2]v/Send%[1]v", nil)`
+		startOfFunctionSnippet := fmt.Sprintf(
 			templateRegistry,
-			module.Placeholder2,
 			opts.PacketName.UpperCamel,
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, module.Placeholder2, replacementRegistry)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterCodec",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Register the module packet interface
-		templateInterface := `registry.RegisterImplementations((*sdk.Msg)(nil),
-	&MsgSend%[2]v{},
-)
-%[1]v`
-		replacementInterface := fmt.Sprintf(templateInterface, module.Placeholder3, opts.PacketName.UpperCamel)
-		content = replacer.Replace(content, module.Placeholder3, replacementInterface)
+		templateInterface := `
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgSend%[2]v{},
+	)`
+		startOfFunctionSnippet = fmt.Sprintf(templateInterface, module.Placeholder3, opts.PacketName.UpperCamel)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
