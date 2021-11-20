@@ -92,12 +92,14 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		}
 
 		// Import
-		template := `%[2]vmodule "%[3]v/x/%[2]v"
-		%[2]vmodulekeeper "%[3]v/x/%[2]v/keeper"
-		%[2]vmoduletypes "%[3]v/x/%[2]v/types"
-%[1]v`
-		snippet := fmt.Sprintf(template, module.PlaceholderSgAppModuleImport, opts.ModuleName, opts.ModulePath)
-		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, snippet)
+		template := `%[1]vmodule "%[2]v/x/%[1]v"
+	%[1]vmodulekeeper "%[2]v/x/%[1]v/keeper"
+	%[1]vmoduletypes "%[2]v/x/%[1]v/types"`
+		snippet := fmt.Sprintf(template, opts.ModuleName, opts.ModulePath)
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), snippet)
+		if err != nil {
+			return err
+		}
 
 		// ModuleBasic
 		template = `%[2]vmodule.AppModuleBasic{},

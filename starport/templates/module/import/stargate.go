@@ -34,12 +34,13 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 			return err
 		}
 
-		templateImport := `%[1]v
-		"github.com/tendermint/spm-extras/wasmcmd"
-		"github.com/CosmWasm/wasmd/x/wasm"
-		wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"`
-		replacementImport := fmt.Sprintf(templateImport, module.PlaceholderSgAppModuleImport)
-		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, replacementImport)
+		importSnippet := `"github.com/tendermint/spm-extras/wasmcmd"
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		enabledProposalsSnippet := `
 var (
