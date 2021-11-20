@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
 	"github.com/tendermint/starport/starport/templates/module"
@@ -33,24 +34,34 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 			return err
 		}
 
-		templateImport := `%[1]v
-		"github.com/tendermint/spm-extras/wasmcmd"
-		"github.com/CosmWasm/wasmd/x/wasm"
-		wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"`
-		replacementImport := fmt.Sprintf(templateImport, module.PlaceholderSgAppModuleImport)
-		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, replacementImport)
+		importSnippet := `"github.com/tendermint/spm-extras/wasmcmd"
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmclient "github.com/CosmWasm/wasmd/x/wasm/client"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
-		templateEnabledProposals := `var (
-			// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
-			// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
-			ProposalsEnabled = "false"
-			// If set to non-empty string it must be comma-separated list of values that are all a subset
-			// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
-			// https://github.com/CosmWasm/wasmd/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
-			EnableSpecificProposals = ""
+		enabledProposalsSnippet := `
+var (
+	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
+	// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
+	ProposalsEnabled = "false"
+	// If set to non-empty string it must be comma-separated list of values that are all a subset
+	// of "EnableAllProposals" (takes precedence over ProposalsEnabled)
+	// https://github.com/CosmWasm/wasmd/blob/02a54d33ff2c064f3539ae12d75d027d9c665f05/x/wasm/internal/types/proposal.go#L28-L34
+	EnableSpecificProposals = ""
+)`
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectNewGlobalPosition,
+			nil,
+			enabledProposalsSnippet,
 		)
-		`
-		content = replacer.Replace(content, module.PlaceholderSgWasmAppEnabledProposals, templateEnabledProposals)
+		if err != nil {
+			return err
+		}
 
 		templateGovProposalHandlers := `%[1]v
 		govProposalHandlers = wasmclient.ProposalHandlers`
@@ -72,14 +83,16 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 		templateDeclaration := `%[1]v
 		scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasm.ModuleName)
 		`
-		replacementDeclaration := fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppScopedKeeper)
-		content = replacer.Replace(content, module.PlaceholderSgAppScopedKeeper, replacementDeclaration)
+		snippet := fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppScopedKeeper)
+		content = replacer.Replace(content, module.PlaceholderSgAppScopedKeeper, snippet)
 
-		templateDeclaration = `%[1]v
-		app.scopedWasmKeeper = scopedWasmKeeper
-		`
-		replacementDeclaration = fmt.Sprintf(templateDeclaration, module.PlaceholderSgAppBeforeInitReturn)
-		content = replacer.Replace(content, module.PlaceholderSgAppBeforeInitReturn, replacementDeclaration)
+		beforeInitReturnSnippet := `app.scopedWasmKeeper = scopedWasmKeeper`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeInitReturnSnippet, clipper.SelectOptions{
+			"functionName": "New",
+		})
+		if err != nil {
+			return err
+		}
 
 		templateStoreKey := `%[1]v
 		wasm.StoreKey,`
@@ -134,10 +147,13 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 		replacementInitGenesis := fmt.Sprintf(templateInitGenesis, module.PlaceholderSgAppInitGenesis)
 		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, replacementInitGenesis)
 
-		templateParamSubspace := `%[1]v
-		paramsKeeper.Subspace(wasm.ModuleName)`
-		replacementParamSubspace := fmt.Sprintf(templateParamSubspace, module.PlaceholderSgAppParamSubspace)
-		content = replacer.Replace(content, module.PlaceholderSgAppParamSubspace, replacementParamSubspace)
+		beforeReturnSnippet := `paramsKeeper.Subspace(wasm.ModuleName)`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "initParamsKeeper",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

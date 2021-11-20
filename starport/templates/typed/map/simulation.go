@@ -43,13 +43,17 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *typed.Options) 
 		)
 		content := replacer.Replace(f.String(), typed.PlaceholderSimappGenesisState, replacementGs)
 
-		content = typed.ModuleSimulationMsgModify(
+		content, err = typed.ModuleSimulationMsgModify(
 			replacer,
+			path,
 			content,
 			opts.ModuleName,
 			opts.TypeName,
 			"Create", "Update", "Delete",
 		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

@@ -58,26 +58,39 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 		}
 
 		// Genesis init
-		templateInit := `%s
-k.SetPort(ctx, genState.PortId)
-// Only try to bind to port if it is not already bound, since we may already own
-// port capability from capability InitGenesis
-if !k.IsBound(ctx, genState.PortId) {
-	// module binds to the port on InitChain
-	// and claims the returned capability
-	err := k.BindPort(ctx, genState.PortId)
-	if err != nil {
-		panic("could not claim port capability: " + err.Error())
-	}
-}`
-		replacementInit := fmt.Sprintf(templateInit, typed.PlaceholderGenesisModuleInit)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementInit)
+		initSnippet := `
+	k.SetPort(ctx, genState.PortId)
+	// Only try to bind to port if it is not already bound, since we may already own
+	// port capability from capability InitGenesis
+	if !k.IsBound(ctx, genState.PortId) {
+		// module binds to the port on InitChain
+		// and claims the returned capability
+		err := k.BindPort(ctx, genState.PortId)
+		if err != nil {
+			panic("could not claim port capability: " + err.Error())
+		}
+	}`
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			initSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Genesis export
-		templateExport := `genesis.PortId = k.GetPort(ctx)
-%s`
-		replacementExport := fmt.Sprintf(templateExport, typed.PlaceholderGenesisModuleExport)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementExport)
+		templateExport := `genesis.PortId = k.GetPort(ctx)`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -93,10 +106,11 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		}
 
 		// Import
-		templateImport := `host "github.com/cosmos/ibc-go/modules/core/24-host"
-%s`
-		replacementImport := fmt.Sprintf(templateImport, typed.PlaceholderGenesisTypesImport)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisTypesImport, replacementImport)
+		importSnippet := `host "github.com/cosmos/ibc-go/modules/core/24-host"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Default genesis
 		templateDefault := `PortId: PortID,
@@ -106,12 +120,15 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 
 		// Validate genesis
 		// PlaceholderIBCGenesisTypeValidate
-		templateValidate := `if err := host.PortIdentifierValidator(gs.PortId); err != nil {
-	return err
-}
-%s`
-		replacementValidate := fmt.Sprintf(templateValidate, typed.PlaceholderGenesisTypesValidate)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, replacementValidate)
+		beforeReturnSnippet := `if err := host.PortIdentifierValidator(gs.PortId); err != nil {
+		return err
+	}`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "Validate",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

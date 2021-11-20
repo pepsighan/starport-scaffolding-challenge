@@ -71,3 +71,20 @@ func PasteGoBeforeReturnSnippetAt(path, code string, snippet string, options Sel
 		},
 	)
 }
+
+// PasteGoImportSnippetAt pastes a Golang import snippet at the import site.
+func PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
+	return PasteGeneratedCodeSnippetAt(
+		path,
+		code,
+		GoSelectNewImportPosition,
+		nil,
+		func(data interface{}) string {
+			importData := data.(GoNewImportPositionData)
+			if importData.OnlyURLNeeded {
+				return fmt.Sprintf("\n%v", snippet)
+			}
+			return fmt.Sprintf("\nimport (\n\t%v\n)", snippet)
+		},
+	)
+}

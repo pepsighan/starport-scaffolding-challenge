@@ -357,22 +357,44 @@ func typesCodecModify(replacer placeholder.Replacer, opts *typed.Options) genny.
 		content := replacer.ReplaceOnce(f.String(), typed.Placeholder, replacementImport)
 
 		// Concrete
-		templateConcrete := `cdc.RegisterConcrete(&MsgCreate%[2]v{}, "%[3]v/Create%[2]v", nil)
-cdc.RegisterConcrete(&MsgUpdate%[2]v{}, "%[3]v/Update%[2]v", nil)
-cdc.RegisterConcrete(&MsgDelete%[2]v{}, "%[3]v/Delete%[2]v", nil)
-%[1]v`
-		replacementConcrete := fmt.Sprintf(templateConcrete, typed.Placeholder2, opts.TypeName.UpperCamel, opts.ModuleName)
-		content = replacer.Replace(content, typed.Placeholder2, replacementConcrete)
+		templateConcrete := `
+	cdc.RegisterConcrete(&MsgCreate%[1]v{}, "%[2]v/Create%[1]v", nil)
+	cdc.RegisterConcrete(&MsgUpdate%[1]v{}, "%[2]v/Update%[1]v", nil)
+	cdc.RegisterConcrete(&MsgDelete%[1]v{}, "%[2]v/Delete%[1]v", nil)`
+		startOfFunctionSnippet := fmt.Sprintf(templateConcrete, opts.TypeName.UpperCamel, opts.ModuleName)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterCodec",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Interface
-		templateInterface := `registry.RegisterImplementations((*sdk.Msg)(nil),
-	&MsgCreate%[2]v{},
-	&MsgUpdate%[2]v{},
-	&MsgDelete%[2]v{},
-)
-%[1]v`
-		replacementInterface := fmt.Sprintf(templateInterface, typed.Placeholder3, opts.TypeName.UpperCamel)
-		content = replacer.Replace(content, typed.Placeholder3, replacementInterface)
+		templateInterface := `
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgCreate%[1]v{},
+		&MsgUpdate%[1]v{},
+		&MsgDelete%[1]v{},
+	)`
+		startOfFunctionSnippet = fmt.Sprintf(templateInterface, opts.TypeName.UpperCamel)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

@@ -97,26 +97,29 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
 
-		templateTypesValidate := `// Check for duplicated ID in %[2]v
-%[2]vIdMap := make(map[uint64]bool)
-%[2]vCount := gs.Get%[3]vCount()
-for _, elem := range gs.%[3]vList {
-	if _, ok := %[2]vIdMap[elem.Id]; ok {
-		return fmt.Errorf("duplicated id for %[2]v")
-	}
-	if elem.Id >= %[2]vCount {
-		return fmt.Errorf("%[2]v id should be lower or equal than the last id")
-	}
-	%[2]vIdMap[elem.Id] = true
-}
-%[1]v`
-		replacementTypesValidate := fmt.Sprintf(
+		templateTypesValidate := `// Check for duplicated ID in %[1]v
+	%[1]vIdMap := make(map[uint64]bool)
+	%[1]vCount := gs.Get%[2]vCount()
+	for _, elem := range gs.%[2]vList {
+		if _, ok := %[1]vIdMap[elem.Id]; ok {
+			return fmt.Errorf("duplicated id for %[1]v")
+		}
+		if elem.Id >= %[1]vCount {
+			return fmt.Errorf("%[1]v id should be lower or equal than the last id")
+		}
+		%[1]vIdMap[elem.Id] = true
+	}`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateTypesValidate,
-			typed.PlaceholderGenesisTypesValidate,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, replacementTypesValidate)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "Validate",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -131,31 +134,44 @@ func genesisModuleModify(replacer placeholder.Replacer, opts *typed.Options) gen
 			return err
 		}
 
-		templateModuleInit := `// Set all the %[2]v
-for _, elem := range genState.%[3]vList {
-	k.Set%[3]v(ctx, elem)
-}
-
-// Set %[2]v count
-k.Set%[3]vCount(ctx, genState.%[3]vCount)
-%[1]v`
-		replacementModuleInit := fmt.Sprintf(
+		templateModuleInit := `
+	// Set all the %[1]v
+	for _, elem := range genState.%[2]vList {
+		k.Set%[2]v(ctx, elem)
+	}
+	
+	// Set %[1]v count
+	k.Set%[2]vCount(ctx, genState.%[2]vCount)`
+		moduleInitSnippet := fmt.Sprintf(
 			templateModuleInit,
-			typed.PlaceholderGenesisModuleInit,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			moduleInitSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
-		templateModuleExport := `genesis.%[2]vList = k.GetAll%[2]v(ctx)
-genesis.%[2]vCount = k.Get%[2]vCount(ctx)
-%[1]v`
-		replacementModuleExport := fmt.Sprintf(
+		templateModuleExport := `genesis.%[1]vList = k.GetAll%[1]v(ctx)
+  genesis.%[1]vCount = k.Get%[1]vCount(ctx)`
+		moduleExport := fmt.Sprintf(
 			templateModuleExport,
-			typed.PlaceholderGenesisModuleExport,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementModuleExport)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, moduleExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -187,15 +203,18 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 		content := replacer.Replace(f.String(), module.PlaceholderGenesisTestState, replacementValid)
 
-		templateAssert := `require.ElementsMatch(t, genesisState.%[2]vList, got.%[2]vList)
-require.Equal(t, genesisState.%[2]vCount, got.%[2]vCount)
-%[1]v`
-		replacementTests := fmt.Sprintf(
+		templateAssert := `require.ElementsMatch(t, genesisState.%[1]vList, got.%[1]vList)
+  require.Equal(t, genesisState.%[1]vCount, got.%[1]vCount)`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateAssert,
-			module.PlaceholderGenesisTestAssert,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, module.PlaceholderGenesisTestAssert, replacementTests)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "TestGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

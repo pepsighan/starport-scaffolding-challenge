@@ -352,18 +352,40 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		content := replacer.ReplaceOnce(f.String(), Placeholder, replacement)
 
 		// Register the module packet
-		templateRegistry := `cdc.RegisterConcrete(&Msg%[3]vData{}, "%[2]v/%[3]vData", nil)
-%[1]v`
-		replacementRegistry := fmt.Sprintf(templateRegistry, Placeholder2, opts.ModuleName, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, Placeholder2, replacementRegistry)
+		templateRegistry := `
+	cdc.RegisterConcrete(&Msg%[2]vData{}, "%[1]v/%[2]vData", nil)`
+		startOfFunctionSnippet := fmt.Sprintf(templateRegistry, opts.ModuleName, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterCodec",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Register the module packet interface
-		templateInterface := `registry.RegisterImplementations((*sdk.Msg)(nil),
-	&Msg%[2]vData{},
-)
-%[1]v`
-		replacementInterface := fmt.Sprintf(templateInterface, Placeholder3, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, Placeholder3, replacementInterface)
+		templateInterface := `
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&Msg%[1]vData{},
+	)`
+		startOfFunctionSnippet = fmt.Sprintf(templateInterface, opts.QueryName.UpperCamel)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

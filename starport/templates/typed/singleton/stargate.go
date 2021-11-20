@@ -299,14 +299,17 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 		content := replacer.Replace(f.String(), module.PlaceholderGenesisTestState, replacementState)
 
-		templateAssert := `require.Equal(t, genesisState.%[2]v, got.%[2]v)
-%[1]v`
-		replacementTests := fmt.Sprintf(
+		templateAssert := `require.Equal(t, genesisState.%[1]v, got.%[1]v)`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateAssert,
-			module.PlaceholderGenesisTestAssert,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, module.PlaceholderGenesisTestAssert, replacementTests)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "TestGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -351,32 +354,44 @@ func genesisModuleModify(replacer placeholder.Replacer, opts *typed.Options) gen
 			return err
 		}
 
-		templateModuleInit := `// Set if defined
-if genState.%[3]v != nil {
-	k.Set%[3]v(ctx, *genState.%[3]v)
-}
-%[1]v`
-		replacementModuleInit := fmt.Sprintf(
+		templateModuleInit := `
+	// Set if defined
+	if genState.%[1]v != nil {
+		k.Set%[1]v(ctx, *genState.%[1]v)
+	}`
+		moduleInitSnippet := fmt.Sprintf(
 			templateModuleInit,
-			typed.PlaceholderGenesisModuleInit,
-			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisModuleInit, replacementModuleInit)
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "InitGenesis",
+			},
+			moduleInitSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
-		templateModuleExport := `// Get all %[2]v
-%[2]v, found := k.Get%[3]v(ctx)
-if found {
-	genesis.%[3]v = &%[2]v
-}
-%[1]v`
-		replacementModuleExport := fmt.Sprintf(
+		templateModuleExport := `// Get all %[1]v
+  %[1]v, found := k.Get%[2]v(ctx)
+  if found {
+	  genesis.%[2]v = &%[1]v
+  }`
+		moduleExport := fmt.Sprintf(
 			templateModuleExport,
-			typed.PlaceholderGenesisModuleExport,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, replacementModuleExport)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, moduleExport, clipper.SelectOptions{
+			"functionName": "ExportGenesis",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -556,31 +571,51 @@ func typesCodecModify(replacer placeholder.Replacer, opts *typed.Options) genny.
 		content = replacer.ReplaceOnce(content, typed.Placeholder, replacementImport)
 
 		// Concrete
-		templateConcrete := `cdc.RegisterConcrete(&MsgCreate%[2]v{}, "%[3]v/Create%[2]v", nil)
-cdc.RegisterConcrete(&MsgUpdate%[2]v{}, "%[3]v/Update%[2]v", nil)
-cdc.RegisterConcrete(&MsgDelete%[2]v{}, "%[3]v/Delete%[2]v", nil)
-%[1]v`
-		replacementConcrete := fmt.Sprintf(
+		templateConcrete := `
+  cdc.RegisterConcrete(&MsgCreate%[1]v{}, "%[2]v/Create%[1]v", nil)
+	cdc.RegisterConcrete(&MsgUpdate%[1]v{}, "%[2]v/Update%[1]v", nil)
+	cdc.RegisterConcrete(&MsgDelete%[1]v{}, "%[2]v/Delete%[1]v", nil)`
+		functionStartSnippet := fmt.Sprintf(
 			templateConcrete,
-			typed.Placeholder2,
 			opts.TypeName.UpperCamel,
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, typed.Placeholder2, replacementConcrete)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterCodec",
+			},
+			functionStartSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Interface
-		templateInterface := `registry.RegisterImplementations((*sdk.Msg)(nil),
-	&MsgCreate%[2]v{},
-	&MsgUpdate%[2]v{},
-	&MsgDelete%[2]v{},
-)
-%[1]v`
-		replacementInterface := fmt.Sprintf(
+		templateInterface := `
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgCreate%[1]v{},
+		&MsgUpdate%[1]v{},
+		&MsgDelete%[1]v{},
+	)`
+		functionStartSnippet = fmt.Sprintf(
 			templateInterface,
-			typed.Placeholder3,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.Placeholder3, replacementInterface)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			functionStartSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

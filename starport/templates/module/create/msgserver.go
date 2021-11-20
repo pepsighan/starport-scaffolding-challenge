@@ -7,11 +7,11 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
-	"github.com/tendermint/starport/starport/templates/module"
 	"github.com/tendermint/starport/starport/templates/typed"
 )
 
@@ -74,17 +74,27 @@ func codecPath(replacer placeholder.Replacer, appPath, moduleName string) genny.
 		}
 
 		// Add msgservice import
-		old := "import ("
-		new := fmt.Sprintf(`%v
-%v`, old, msgServiceImport)
-		content := replacer.Replace(f.String(), old, new)
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), msgServiceImport)
+		if err != nil {
+			return err
+		}
 
 		// Add RegisterMsgServiceDesc method call
-		template := `%[1]v
+		startOfFunctionSnippet := `
+	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)`
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStartOfFunctionPosition,
+			clipper.SelectOptions{
+				"functionName": "RegisterInterfaces",
+			},
+			startOfFunctionSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
-msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)`
-		replacement := fmt.Sprintf(template, module.Placeholder3)
-		content = replacer.Replace(content, module.Placeholder3, replacement)
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
