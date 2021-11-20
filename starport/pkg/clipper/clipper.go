@@ -84,7 +84,7 @@ func PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
 			if importData.OnlyURLNeeded {
 				return fmt.Sprintf("\n%v", snippet)
 			}
-			return fmt.Sprintf("\nimport \"%v\"", snippet)
+			return fmt.Sprintf("\nimport (\n\t%v\n)", snippet)
 		},
 	)
 }
