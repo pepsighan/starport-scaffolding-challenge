@@ -41,7 +41,8 @@ func appModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 		replacementImport := fmt.Sprintf(templateImport, module.PlaceholderSgAppModuleImport)
 		content := replacer.Replace(f.String(), module.PlaceholderSgAppModuleImport, replacementImport)
 
-		enabledProposalsSnippet := `var (
+		enabledProposalsSnippet := `
+var (
 	// If EnabledSpecificProposals is "", and this is "true", then enable all x/wasm proposals.
 	// If EnabledSpecificProposals is "", and this is not "true", then disable all x/wasm proposals.
 	ProposalsEnabled = "false"

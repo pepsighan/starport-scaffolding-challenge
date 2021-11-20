@@ -277,15 +277,17 @@ func eventModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 			return err
 		}
 
-		template := `EventType%[2]vPacket       = "%[3]v_packet"
-%[1]v`
-		replacement := fmt.Sprintf(
+		template := `
+const EventType%[1]vPacket = "%[2]v_packet"`
+		snippet := fmt.Sprintf(
 			template,
-			PlaceholderIBCPacketEvent,
 			opts.PacketName.UpperCamel,
 			opts.PacketName.LowerCamel,
 		)
-		content := replacer.Replace(f.String(), PlaceholderIBCPacketEvent, replacement)
+		content, err := clipper.PasteCodeSnippetAt(path, f.String(), clipper.GoSelectNewGlobalPosition, nil, snippet)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
