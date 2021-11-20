@@ -466,9 +466,9 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		// Register the module packet interface
 		templateInterface := `
 	registry.RegisterImplementations((*sdk.Msg)(nil),
-		&MsgSend%[2]v{},
+		&MsgSend%[1]v{},
 	)`
-		startOfFunctionSnippet = fmt.Sprintf(templateInterface, module.Placeholder3, opts.PacketName.UpperCamel)
+		startOfFunctionSnippet = fmt.Sprintf(templateInterface, opts.PacketName.UpperCamel)
 		content, err = clipper.PasteCodeSnippetAt(
 			path,
 			content,
