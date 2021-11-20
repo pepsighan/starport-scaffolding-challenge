@@ -106,10 +106,11 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		}
 
 		// Import
-		templateImport := `host "github.com/cosmos/ibc-go/modules/core/24-host"
-%s`
-		replacementImport := fmt.Sprintf(templateImport, typed.PlaceholderGenesisTypesImport)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisTypesImport, replacementImport)
+		importSnippet := `host "github.com/cosmos/ibc-go/modules/core/24-host"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Default genesis
 		templateDefault := `PortId: PortID,
