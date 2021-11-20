@@ -74,10 +74,10 @@ func codecPath(replacer placeholder.Replacer, appPath, moduleName string) genny.
 		}
 
 		// Add msgservice import
-		old := "import ("
-		newImport := fmt.Sprintf(`%v
-%v`, old, msgServiceImport)
-		content := replacer.Replace(f.String(), old, newImport)
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), msgServiceImport)
+		if err != nil {
+			return err
+		}
 
 		// Add RegisterMsgServiceDesc method call
 		startOfFunctionSnippet := `
