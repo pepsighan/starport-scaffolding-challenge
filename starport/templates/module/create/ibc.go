@@ -119,12 +119,15 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 
 		// Validate genesis
 		// PlaceholderIBCGenesisTypeValidate
-		templateValidate := `if err := host.PortIdentifierValidator(gs.PortId); err != nil {
-	return err
-}
-%s`
-		replacementValidate := fmt.Sprintf(templateValidate, typed.PlaceholderGenesisTypesValidate)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, replacementValidate)
+		beforeReturnSnippet := `if err := host.PortIdentifierValidator(gs.PortId); err != nil {
+		return err
+	}`
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "Validate",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

@@ -97,26 +97,29 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
 
-		templateTypesValidate := `// Check for duplicated ID in %[2]v
-%[2]vIdMap := make(map[uint64]bool)
-%[2]vCount := gs.Get%[3]vCount()
-for _, elem := range gs.%[3]vList {
-	if _, ok := %[2]vIdMap[elem.Id]; ok {
-		return fmt.Errorf("duplicated id for %[2]v")
-	}
-	if elem.Id >= %[2]vCount {
-		return fmt.Errorf("%[2]v id should be lower or equal than the last id")
-	}
-	%[2]vIdMap[elem.Id] = true
-}
-%[1]v`
-		replacementTypesValidate := fmt.Sprintf(
+		templateTypesValidate := `// Check for duplicated ID in %[1]v
+	%[1]vIdMap := make(map[uint64]bool)
+	%[1]vCount := gs.Get%[2]vCount()
+	for _, elem := range gs.%[2]vList {
+		if _, ok := %[1]vIdMap[elem.Id]; ok {
+			return fmt.Errorf("duplicated id for %[1]v")
+		}
+		if elem.Id >= %[1]vCount {
+			return fmt.Errorf("%[1]v id should be lower or equal than the last id")
+		}
+		%[1]vIdMap[elem.Id] = true
+	}`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateTypesValidate,
-			typed.PlaceholderGenesisTypesValidate,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, replacementTypesValidate)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "Validate",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

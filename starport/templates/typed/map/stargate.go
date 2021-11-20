@@ -351,25 +351,28 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		}
 		keyCall := fmt.Sprintf("%sKey(%s)", opts.TypeName.UpperCamel, strings.Join(indexArgs, ","))
 
-		templateTypesValidate := `// Check for duplicated index in %[2]v
-%[2]vIndexMap := make(map[string]struct{})
-
-for _, elem := range gs.%[3]vList {
-	index := %[4]v
-	if _, ok := %[2]vIndexMap[index]; ok {
-		return fmt.Errorf("duplicated index for %[2]v")
-	}
-	%[2]vIndexMap[index] = struct{}{}
-}
-%[1]v`
-		replacementTypesValidate := fmt.Sprintf(
+		templateTypesValidate := `// Check for duplicated index in %[1]v
+	%[1]vIndexMap := make(map[string]struct{})
+	
+	for _, elem := range gs.%[2]vList {
+		index := %[3]v
+		if _, ok := %[1]vIndexMap[index]; ok {
+			return fmt.Errorf("duplicated index for %[1]v")
+		}
+		%[1]vIndexMap[index] = struct{}{}
+	}`
+		beforeReturnSnippet := fmt.Sprintf(
 			templateTypesValidate,
-			typed.PlaceholderGenesisTypesValidate,
 			opts.TypeName.LowerCamel,
 			opts.TypeName.UpperCamel,
 			fmt.Sprintf("string(%s)", keyCall),
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, replacementTypesValidate)
+		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			"functionName": "Validate",
+		})
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
