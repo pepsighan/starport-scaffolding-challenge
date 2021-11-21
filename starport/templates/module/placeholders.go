@@ -1,8 +1,6 @@
 package module
 
 const (
-	Placeholder = "// this line is used by starport scaffolding # 1"
-
 	// Placeholders in Stargate app.go
 	PlaceholderSgAppModuleBasic         = "// this line is used by starport scaffolding # stargate/app/moduleBasic"
 	PlaceholderSgAppKeeperDeclaration   = "// this line is used by starport scaffolding # stargate/app/keeperDeclaration"
