@@ -167,11 +167,14 @@ func moduleGRPCGatewayModify(replacer placeholder.Replacer, opts *typed.Options)
 		if err != nil {
 			return err
 		}
-		replacement := `"context"`
-		content := replacer.ReplaceOnce(f.String(), typed.Placeholder, replacement)
+		snippet := `"context"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), snippet)
+		if err != nil {
+			return err
+		}
 
-		replacement = `types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))`
-		content = replacer.ReplaceOnce(content, typed.Placeholder2, replacement)
+		snippet = `types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))`
+		content = replacer.ReplaceOnce(content, typed.Placeholder2, snippet)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -258,8 +261,6 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		content := typed.PatchGenesisTypeImport(replacer, f.String())
-
 		templateTypesDefault := `%[2]v: nil,
 %[1]v`
 		replacementTypesDefault := fmt.Sprintf(
@@ -267,7 +268,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			typed.PlaceholderGenesisTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
+		content := replacer.Replace(f.String(), typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -567,8 +568,11 @@ func typesCodecModify(replacer placeholder.Replacer, opts *typed.Options) genny.
 		content := f.String()
 
 		// Import
-		replacementImport := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content = replacer.ReplaceOnce(content, typed.Placeholder, replacementImport)
+		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
+		content, err = clipper.PasteGoImportSnippetAt(path, content, importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Concrete
 		templateConcrete := `

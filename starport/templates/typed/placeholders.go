@@ -8,7 +8,6 @@ const (
 	PlaceholderHandlerMsgServer = "// this line is used by starport scaffolding # handler/msgServer"
 
 	// Genesis
-	PlaceholderGenesisTypesImport  = "// this line is used by starport scaffolding # genesis/types/import"
 	PlaceholderGenesisTypesDefault = "// this line is used by starport scaffolding # genesis/types/default"
 
 	PlaceholderSimappGenesisState = "// this line is used by starport scaffolding # simapp/module/genesisState"

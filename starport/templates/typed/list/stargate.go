@@ -317,10 +317,14 @@ func moduleGRPCGatewayModify(replacer placeholder.Replacer, opts *typed.Options)
 		if err != nil {
 			return err
 		}
-		replacement := `"context"`
-		content := replacer.ReplaceOnce(f.String(), typed.Placeholder, replacement)
-		replacement = `types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))`
-		content = replacer.ReplaceOnce(content, typed.Placeholder2, replacement)
+		snippet := `"context"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), snippet)
+		if err != nil {
+			return err
+		}
+
+		snippet = `types.RegisterQueryHandlerClient(context.Background(), mux, types.NewQueryClient(clientCtx))`
+		content = replacer.ReplaceOnce(content, typed.Placeholder2, snippet)
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
@@ -353,8 +357,11 @@ func typesCodecModify(replacer placeholder.Replacer, opts *typed.Options) genny.
 		}
 
 		// Import
-		replacementImport := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content := replacer.ReplaceOnce(f.String(), typed.Placeholder, replacementImport)
+		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Concrete
 		templateConcrete := `

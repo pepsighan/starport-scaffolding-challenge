@@ -15,7 +15,6 @@ import (
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
-	"github.com/tendermint/starport/starport/templates/module"
 	"github.com/tendermint/starport/starport/templates/testutil"
 )
 
@@ -439,8 +438,11 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		}
 
 		// Set import if not set yet
-		replacement := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content := replacer.ReplaceOnce(f.String(), module.Placeholder, replacement)
+		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Register the module packet
 		templateRegistry := `
