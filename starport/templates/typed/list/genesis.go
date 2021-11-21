@@ -83,10 +83,13 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		content := typed.PatchGenesisTypeImport(replacer, f.String())
-
-		templateTypesImport := `"fmt"`
-		content = replacer.ReplaceOnce(content, typed.PlaceholderGenesisTypesImport, templateTypesImport)
+		// There can be duplicate imports of `"fmt"` when the command is run more
+		// times but the gofmt will remove the duplicate ones.
+		importSnippet := `"fmt"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		templateTypesDefault := `%[2]vList: []%[2]v{},
 %[1]v`
