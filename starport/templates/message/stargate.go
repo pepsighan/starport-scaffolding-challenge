@@ -157,8 +157,11 @@ func typesCodecModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 		if err != nil {
 			return err
 		}
-		replacementImport := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content := replacer.ReplaceOnce(f.String(), Placeholder, replacementImport)
+		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		templateRegisterConcrete := `
 	cdc.RegisterConcrete(&Msg%[1]v{}, "%[2]v/%[1]v", nil)`

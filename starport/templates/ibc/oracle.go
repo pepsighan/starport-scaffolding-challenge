@@ -348,8 +348,11 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		}
 
 		// Set import if not set yet
-		replacement := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content := replacer.ReplaceOnce(f.String(), Placeholder, replacement)
+		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
+		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		if err != nil {
+			return err
+		}
 
 		// Register the module packet
 		templateRegistry := `
