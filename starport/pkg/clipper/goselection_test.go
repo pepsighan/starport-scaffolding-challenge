@@ -314,3 +314,30 @@ func TestGoSelectReturningStructNewArgumentPositionWhenNoArgs(t *testing.T) {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
+
+const mapReturnMultiLineFile = `package test
+
+func returnsValue() map[string]string {
+	return map[string]string{
+		"fielda": "1",
+		"fieldb": "2",
+	}
+}
+`
+
+func TestGoSelectReturningMapNewArgumentPositionInMultiLine(t *testing.T) {
+	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", mapReturnMultiLineFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 116 {
+		t.Fatal("invalid map new argument position", result)
+	}
+
+	if !result.Data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma {
+		t.Fatal("invalid data after position selection", result)
+	}
+}
