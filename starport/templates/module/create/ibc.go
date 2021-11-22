@@ -173,21 +173,40 @@ func keysModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn 
 		}
 
 		// Append version and the port ID in keys
-		templateName := `// Version defines the current version the IBC module supports
-Version = "%[1]v-1"
-
-// PortID is the default port id that module binds to
-PortID = "%[1]v"`
-		replacementName := fmt.Sprintf(templateName, opts.ModuleName)
-		content := replacer.Replace(f.String(), module.PlaceholderIBCKeysName, replacementName)
+		templateName := `
+const (
+	// Version defines the current version the IBC module supports
+	Version = "%[1]v-1"
+	
+	// PortID is the default port id that module binds to
+	PortID = "%[1]v"
+)`
+		constSnippet := fmt.Sprintf(templateName, opts.ModuleName)
+		content, err := clipper.PasteCodeSnippetAt(
+			path,
+			f.String(),
+			clipper.GoSelectNewGlobalPosition,
+			nil,
+			constSnippet,
+		)
 
 		// PlaceholderIBCKeysPort
-		templatePort := `var (
+		templatePort := `
+var (
 	// PortKey defines the key to store the port ID in store
 	PortKey = KeyPrefix("%[1]v-port-")
 )`
-		replacementPort := fmt.Sprintf(templatePort, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderIBCKeysPort, replacementPort)
+		varSnippet := fmt.Sprintf(templatePort, opts.ModuleName)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectNewGlobalPosition,
+			nil,
+			varSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
