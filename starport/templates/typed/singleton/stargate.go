@@ -261,14 +261,22 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateTypesDefault := `%[2]v: nil,
-%[1]v`
-		replacementTypesDefault := fmt.Sprintf(
+		templateTypesDefault := `%[1]v: nil`
+		funcArgSnippet := fmt.Sprintf(
 			templateTypesDefault,
-			typed.PlaceholderGenesisTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
+		content, err := clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			path,
+			f.String(),
+			funcArgSnippet,
+			clipper.SelectOptions{
+				"functionName": "DefaultGenesis",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)

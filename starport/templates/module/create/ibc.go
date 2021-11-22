@@ -14,7 +14,6 @@ import (
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
 	"github.com/tendermint/starport/starport/templates/module"
-	"github.com/tendermint/starport/starport/templates/typed"
 )
 
 // NewIBC returns the generator to scaffold the implementation of the IBCModule interface inside a module
@@ -113,10 +112,18 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		}
 
 		// Default genesis
-		templateDefault := `PortId: PortID,
-%s`
-		replacementDefault := fmt.Sprintf(templateDefault, typed.PlaceholderGenesisTypesDefault)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementDefault)
+		templateDefault := `PortId: PortID`
+		content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			path,
+			content,
+			templateDefault,
+			clipper.SelectOptions{
+				"functionName": "DefaultGenesis",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		// Validate genesis
 		// PlaceholderIBCGenesisTypeValidate

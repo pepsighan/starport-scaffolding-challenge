@@ -339,14 +339,22 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateTypesDefault := `%[2]vList: []%[2]v{},
-%[1]v`
-		replacementTypesDefault := fmt.Sprintf(
+		templateTypesDefault := `%[1]vList: []%[1]v{}`
+		funcArgSnippet := fmt.Sprintf(
 			templateTypesDefault,
-			typed.PlaceholderGenesisTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
+		content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			path,
+			content,
+			funcArgSnippet,
+			clipper.SelectOptions{
+				"functionName": "DefaultGenesis",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		// lines of code to call the key function with the indexes of the element
 		var indexArgs []string

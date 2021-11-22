@@ -91,14 +91,22 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateTypesDefault := `%[2]vList: []%[2]v{},
-%[1]v`
-		replacementTypesDefault := fmt.Sprintf(
+		templateTypesDefault := `%[1]vList: []%[1]v{}`
+		funcArgSnippet := fmt.Sprintf(
 			templateTypesDefault,
-			typed.PlaceholderGenesisTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
+		content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			path,
+			content,
+			funcArgSnippet,
+			clipper.SelectOptions{
+				"functionName": "DefaultGenesis",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		templateTypesValidate := `// Check for duplicated ID in %[1]v
 	%[1]vIdMap := make(map[uint64]bool)
