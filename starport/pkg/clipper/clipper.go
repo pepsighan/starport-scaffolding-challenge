@@ -88,3 +88,37 @@ func PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
 		},
 	)
 }
+
+// PasteGoReturningFunctionNewArgumentSnippetAt pastes argument for a returning function in a function.
+func PasteGoReturningFunctionNewArgumentSnippetAt(path, code string, snippet string) (string, error) {
+	return PasteGeneratedCodeSnippetAt(
+		path,
+		code,
+		GoSelectReturningCompositeNewArgumentPosition,
+		nil,
+		func(data interface{}) string {
+			hasTrailingComma := data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma
+			if hasTrailingComma {
+				return fmt.Sprintf("\t%v,\n\t", snippet)
+			}
+			return fmt.Sprintf(", %v", snippet)
+		},
+	)
+}
+
+// PasteGoReturningCompositeNewArgumentSnippetAt pastes argument for a returning struct in a function.
+func PasteGoReturningCompositeNewArgumentSnippetAt(path, code string, snippet string) (string, error) {
+	return PasteGeneratedCodeSnippetAt(
+		path,
+		code,
+		GoSelectReturningCompositeNewArgumentPosition,
+		nil,
+		func(data interface{}) string {
+			hasTrailingComma := data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma
+			if hasTrailingComma {
+				return fmt.Sprintf("\t%v,\n\t", snippet)
+			}
+			return fmt.Sprintf(", %v", snippet)
+		},
+	)
+}
