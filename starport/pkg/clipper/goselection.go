@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"strings"
 )
 
 // GoNewImportPositionData stores data collected during a selection of a new import position.
@@ -17,8 +18,14 @@ type GoSelectBeforeFunctionReturnsPositionData struct {
 	HasReturn bool
 }
 
+// GoSelectReturningFunctionCallNewArgumentPositionData stores data collected during a selection of the position for
+// a new argument in a function call which is being returned.
+type GoSelectReturningFunctionCallNewArgumentPositionData struct {
+	HasTrailingComma bool
+}
+
 // goPositionFinder tries to find a required position during a walk of the Golang AST.
-type goPositionFinder func(result *PositionSelectorResult, options SelectOptions) goVisitor
+type goPositionFinder func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor
 
 // goVisitor visits each node in the Golang AST tree until it returns true.
 type goVisitor func(node ast.Node) bool
@@ -46,7 +53,7 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 		result := &PositionSelectorResult{
 			OffsetPosition: NoOffsetPosition,
 		}
-		ast.Walk(finder(result, options), parsedAST)
+		ast.Walk(finder(result, options, code), parsedAST)
 
 		if result.OffsetPosition != NoOffsetPosition {
 			// The offset position coming from the finder is 1-indexed. So making it 0-indexed.
@@ -59,7 +66,7 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 
 // GoSelectNewImportPosition selects a position where in a new import can be added.
 var GoSelectNewImportPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		return func(node ast.Node) bool {
 			switch n := node.(type) {
 			case *ast.File:
@@ -91,7 +98,7 @@ var GoSelectNewImportPosition = wrapGoFinder(
 // GoSelectNewGlobalPosition selects a position a new variable declaration, function or anything global can be
 // added.
 var GoSelectNewGlobalPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		return func(node ast.Node) bool {
 			// Select a position after the package declaration or all the imports.
 			switch n := node.(type) {
@@ -111,7 +118,7 @@ var GoSelectNewGlobalPosition = wrapGoFinder(
 // GoSelectBeforeFunctionReturnsPosition selects a position just before the last function return (implicit or explicit).
 // This only considers the function return which is at the function return.
 var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		functionName := options["functionName"]
 
 		return func(node ast.Node) bool {
@@ -142,7 +149,7 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 
 // GoSelectStartOfFunctionPosition selects a position just after the function block starts.
 var GoSelectStartOfFunctionPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		functionName := options["functionName"]
 
 		return func(node ast.Node) bool {
@@ -158,7 +165,7 @@ var GoSelectStartOfFunctionPosition = wrapGoFinder(
 // GoSelectReturningFunctionCallNewArgumentPosition selects a position for a new argument in a function call that is
 // returning a value. This function call must be in the returning statement.
 var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
 		functionName := options["functionName"]
 
 		return func(node ast.Node) bool {
@@ -170,6 +177,15 @@ var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
 
 					if r, ok := ret.(*ast.CallExpr); ok {
 						result.OffsetPosition = OffsetPosition(r.Rparen)
+						result.Data = GoSelectReturningFunctionCallNewArgumentPositionData{}
+
+						// Check if the closing parenthesis is preceded by a comma.
+						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
+						if leftPart[len(leftPart)-1] == ',' {
+							result.Data = GoSelectReturningFunctionCallNewArgumentPositionData{
+								HasTrailingComma: true,
+							}
+						}
 					}
 				}
 			}
