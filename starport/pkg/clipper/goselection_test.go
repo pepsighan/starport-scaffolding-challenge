@@ -224,3 +224,93 @@ func TestGoSelectReturningFunctionCallPositionWhenNoArguments(t *testing.T) {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
+
+const structReturnSingleLineFile = `package test
+
+type Call struct {
+	FieldA int
+	FieldB int
+}
+
+func returnsValue() Call {
+	return Call{ FieldA: 5, FieldB: 6 }
+}
+`
+
+func TestGoSelectReturningStructNewArgumentPositionInSingleLine(t *testing.T) {
+	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnSingleLineFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 122 {
+		t.Fatal("invalid struct new argument position", result)
+	}
+
+	if result.Data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma {
+		t.Fatal("invalid data after position selection", result)
+	}
+}
+
+const structReturnMultiLineFile = `package test
+
+type Call struct {
+	FieldA int
+	FieldB int
+}
+
+func returnsValue() *Call {
+	return &Call{
+		FieldA: 5,
+		FieldB: 6,
+	}
+}
+`
+
+func TestGoSelectReturningStructNewArgumentPositionInMultiLine(t *testing.T) {
+	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnMultiLineFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 130 {
+		t.Fatal("invalid struct new argument position", result)
+	}
+
+	if !result.Data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma {
+		t.Fatal("invalid data after position selection", result)
+	}
+}
+
+const structReturnNoArgumentsFile = `package test
+
+type Call struct {
+	FieldA int
+	FieldB int
+}
+
+func returnsValue() Call {
+	return Call{}
+}
+`
+
+func TestGoSelectReturningStructNewArgumentPositionWhenNoArgs(t *testing.T) {
+	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnNoArgumentsFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 100 {
+		t.Fatal("invalid struct new argument position", result)
+	}
+
+	if result.Data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma {
+		t.Fatal("invalid data after position selection", result)
+	}
+}

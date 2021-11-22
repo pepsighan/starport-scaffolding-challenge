@@ -214,6 +214,11 @@ var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
 				if l, ok := lastItem.(*ast.ReturnStmt); ok && len(l.Results) == 1 {
 					ret := l.Results[0]
 
+					// If the returned value is a reference, cut the reference symbol off.
+					if r, ok := ret.(*ast.UnaryExpr); ok && r.Op == token.AND {
+						ret = r.X
+					}
+
 					if r, ok := ret.(*ast.CompositeLit); ok {
 						result.OffsetPosition = OffsetPosition(r.Rbrace)
 						result.Data = GoReturningCompositeNewArgumentPositionData{}
