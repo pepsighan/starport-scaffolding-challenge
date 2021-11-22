@@ -24,6 +24,12 @@ type GoSelectReturningFunctionCallNewArgumentPositionData struct {
 	HasTrailingComma bool
 }
 
+// GoSelectReturningCompositeNewArgumentPositionData stores data collected during a selection of the position for
+// a new argument in a struct which is being returned.
+type GoSelectReturningCompositeNewArgumentPositionData struct {
+	HasTrailingComma bool
+}
+
 // goPositionFinder tries to find a required position during a walk of the Golang AST.
 type goPositionFinder func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor
 
@@ -183,6 +189,39 @@ var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
 						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
 						if leftPart[len(leftPart)-1] == ',' {
 							result.Data = GoSelectReturningFunctionCallNewArgumentPositionData{
+								HasTrailingComma: true,
+							}
+						}
+					}
+				}
+			}
+
+			return true
+		}
+	},
+)
+
+// GoSelectReturningCompositeNewArgumentPosition selects a position for a new argument in a struct/map that is being
+// returned a value. This function call must be in the returning statement.
+var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				lastItem := n.Body.List[len(n.Body.List)-1]
+
+				if l, ok := lastItem.(*ast.ReturnStmt); ok && len(l.Results) == 1 {
+					ret := l.Results[0]
+
+					if r, ok := ret.(*ast.CompositeLit); ok {
+						result.OffsetPosition = OffsetPosition(r.Rbrace)
+						result.Data = GoSelectReturningCompositeNewArgumentPositionData{}
+
+						// Check if the closing brace is preceded by a comma.
+						leftPart := []rune(strings.TrimSpace(code[:r.Rbrace-1]))
+						if leftPart[len(leftPart)-1] == ',' {
+							result.Data = GoSelectReturningCompositeNewArgumentPositionData{
 								HasTrailingComma: true,
 							}
 						}
