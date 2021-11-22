@@ -63,7 +63,7 @@ func PasteGoBeforeReturnSnippetAt(path, code string, snippet string, options Sel
 		GoSelectBeforeFunctionReturnsPosition,
 		options,
 		func(data interface{}) string {
-			hasReturn := data.(GoSelectBeforeFunctionReturnsPositionData).HasReturn
+			hasReturn := data.(GoBeforeFunctionReturnsPositionData).HasReturn
 			if hasReturn {
 				return fmt.Sprintf("%v\n\t", snippet)
 			}

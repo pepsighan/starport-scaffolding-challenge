@@ -13,20 +13,20 @@ type GoNewImportPositionData struct {
 	OnlyURLNeeded    bool
 }
 
-// GoSelectBeforeFunctionReturnsPositionData stores data collected during a selection of the position before a return.
-type GoSelectBeforeFunctionReturnsPositionData struct {
+// GoBeforeFunctionReturnsPositionData stores data collected during a selection of the position before a return.
+type GoBeforeFunctionReturnsPositionData struct {
 	HasReturn bool
 }
 
-// GoSelectReturningFunctionCallNewArgumentPositionData stores data collected during a selection of the position for
+// GoReturningFunctionCallNewArgumentPositionData stores data collected during a selection of the position for
 // a new argument in a function call which is being returned.
-type GoSelectReturningFunctionCallNewArgumentPositionData struct {
+type GoReturningFunctionCallNewArgumentPositionData struct {
 	HasTrailingComma bool
 }
 
-// GoSelectReturningCompositeNewArgumentPositionData stores data collected during a selection of the position for
+// GoReturningCompositeNewArgumentPositionData stores data collected during a selection of the position for
 // a new argument in a struct which is being returned.
-type GoSelectReturningCompositeNewArgumentPositionData struct {
+type GoReturningCompositeNewArgumentPositionData struct {
 	HasTrailingComma bool
 }
 
@@ -136,13 +136,13 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 				case *ast.ReturnStmt:
 					// If there is a return, select a position before it.
 					result.OffsetPosition = OffsetPosition(l.Pos())
-					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+					result.Data = GoBeforeFunctionReturnsPositionData{
 						HasReturn: true,
 					}
 				default:
 					// Select the last position as there is no return here.
 					result.OffsetPosition = OffsetPosition(lastItem.End())
-					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+					result.Data = GoBeforeFunctionReturnsPositionData{
 						HasReturn: false,
 					}
 				}
@@ -183,12 +183,12 @@ var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
 
 					if r, ok := ret.(*ast.CallExpr); ok {
 						result.OffsetPosition = OffsetPosition(r.Rparen)
-						result.Data = GoSelectReturningFunctionCallNewArgumentPositionData{}
+						result.Data = GoReturningFunctionCallNewArgumentPositionData{}
 
 						// Check if the closing parenthesis is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
 						if leftPart[len(leftPart)-1] == ',' {
-							result.Data = GoSelectReturningFunctionCallNewArgumentPositionData{
+							result.Data = GoReturningFunctionCallNewArgumentPositionData{
 								HasTrailingComma: true,
 							}
 						}
@@ -216,12 +216,12 @@ var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
 
 					if r, ok := ret.(*ast.CompositeLit); ok {
 						result.OffsetPosition = OffsetPosition(r.Rbrace)
-						result.Data = GoSelectReturningCompositeNewArgumentPositionData{}
+						result.Data = GoReturningCompositeNewArgumentPositionData{}
 
 						// Check if the closing brace is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rbrace-1]))
 						if leftPart[len(leftPart)-1] == ',' {
-							result.Data = GoSelectReturningCompositeNewArgumentPositionData{
+							result.Data = GoReturningCompositeNewArgumentPositionData{
 								HasTrailingComma: true,
 							}
 						}

@@ -169,7 +169,7 @@ func TestGoSelectReturningFunctionCallPositionInSingleLine(t *testing.T) {
 		t.Fatal("invalid function call new argument position", result)
 	}
 
-	if result.Data.(GoSelectReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
+	if result.Data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
@@ -196,7 +196,7 @@ func TestGoSelectReturningFunctionCallPositionInMultiLine(t *testing.T) {
 		t.Fatal("invalid function call new argument position", result)
 	}
 
-	if !result.Data.(GoSelectReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
+	if !result.Data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
@@ -220,7 +220,7 @@ func TestGoSelectReturningFunctionCallPositionWhenNoArguments(t *testing.T) {
 		t.Fatal("invalid function call new argument position", result)
 	}
 
-	if result.Data.(GoSelectReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
+	if result.Data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
