@@ -154,3 +154,27 @@ var GoSelectStartOfFunctionPosition = wrapGoFinder(
 		}
 	},
 )
+
+// GoSelectReturningFunctionCallNewArgumentPosition selects a position for a new argument in a function call that is
+// returning a value. This function call must be in the returning statement.
+var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				lastItem := n.Body.List[len(n.Body.List)-1]
+
+				if l, ok := lastItem.(*ast.ReturnStmt); ok && len(l.Results) == 1 {
+					ret := l.Results[0]
+
+					if r, ok := ret.(*ast.CallExpr); ok {
+						result.OffsetPosition = OffsetPosition(r.Rparen)
+					}
+				}
+			}
+
+			return true
+		}
+	},
+)

@@ -149,3 +149,66 @@ func TestGoSelectStartOfFunctionPosition(t *testing.T) {
 		t.Fatal("invalid function block start position", result)
 	}
 }
+
+const functionCallReturnSingleLineFile = `package test
+
+func returnsValue() int {
+	return call(arg0, arg1)
+}
+`
+
+func TestGoSelectReturningFunctionCallPositionInSingleLine(t *testing.T) {
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnSingleLineFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 63 {
+		t.Fatal("invalid function call new argument position", result)
+	}
+}
+
+const functionCallReturnMultiLineFile = `package test
+
+func returnsValue() int {
+	return call(
+		arg0,
+		arg1,
+	)
+}
+`
+
+func TestGoSelectReturningFunctionCallPositionInMultiLine(t *testing.T) {
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnMultiLineFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 71 {
+		t.Fatal("invalid function call new argument position", result)
+	}
+}
+
+const functionCallReturnNoArgumentsFile = `package test
+
+func returnsValue() int {
+	return call()
+}
+`
+
+func TestGoSelectReturningFunctionCallPositionWhenNoArguments(t *testing.T) {
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnNoArgumentsFile, SelectOptions{
+		"functionName": "returnsValue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 53 {
+		t.Fatal("invalid function call new argument position", result)
+	}
+}
