@@ -3,8 +3,10 @@ package maptype
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/typed"
 )
@@ -26,22 +28,39 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *typed.Options) 
 			}
 		}
 
+		content := f.String()
 		// simulation genesis state
-		templateGs := `%[2]vList: []types.%[2]v{
+		templateGs := `%[1]vList: []types.%[1]v{
+		{
+			%[2]v},
 		{
 			%[3]v},
-		{
-			%[4]v},
-	},
-	%[1]v`
-		replacementGs := fmt.Sprintf(
+	},`
+		genesisStateSnippet := fmt.Sprintf(
 			templateGs,
-			typed.PlaceholderSimappGenesisState,
 			opts.TypeName.UpperCamel,
 			sampleIndexes[0],
 			sampleIndexes[1],
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderSimappGenesisState, replacementGs)
+		if strings.Count(content, typed.PlaceholderSimappGenesisState) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			genesisStateSnippet += "\n" + typed.PlaceholderSimappGenesisState
+			content = replacer.Replace(content, typed.PlaceholderSimappGenesisState, genesisStateSnippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				genesisStateSnippet,
+				clipper.SelectOptions{
+					"functionName": "newGenesisState",
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+		}
 
 		content, err = typed.ModuleSimulationMsgModify(
 			replacer,
