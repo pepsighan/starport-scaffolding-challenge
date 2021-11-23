@@ -96,29 +96,32 @@ const (
 	Name                 = "<%= BinaryNamePrefix %>"
 )
 
-func getGovProposalHandlers() []govclient.ProposalHandler {
-	var govProposalHandlers []govclient.ProposalHandler
-	// this line is used by starport scaffolding # stargate/app/govProposalHandlers
-
-	govProposalHandlers = append(govProposalHandlers,
+// additionalGovProposalHandlers are the additional proposal handlers
+func additionalGovProposalHandlers() []govclient.ProposalHandler {
+	return []govclient.ProposalHandler{
 		paramsclient.ProposalHandler,
 		distrclient.ProposalHandler,
 		upgradeclient.ProposalHandler,
 		upgradeclient.CancelProposalHandler,
 		// this line is used by starport scaffolding # stargate/app/govProposalHandler
+	}
+}
+
+func getGovProposalHandlers() []govclient.ProposalHandler {
+	var govProposalHandlers []govclient.ProposalHandler
+	// this line is used by starport scaffolding # stargate/app/govProposalHandlers
+
+	govProposalHandlers = append(
+		govProposalHandlers,
+		additionalGovProposalHandlers()...,
 	)
 
 	return govProposalHandlers
 }
 
-var (
-	// DefaultNodeHome default home directories for the application daemon
-	DefaultNodeHome string
- 
-	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
-	// non-dependant module elements, such as codec registration
-	// and genesis verification.
-	ModuleBasics = module.NewBasicManager(
+// newModuleBasics creates a new basic manager for the app
+func newModuleBasics() module.BasicManager {
+	return module.NewBasicManager(
 		auth.AppModuleBasic{},
 		genutil.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -138,9 +141,11 @@ var (
 		vesting.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
+}
 
-	// module account permissions
-	maccPerms = map[string][]string{
+// moduleAccountPermissions are the module account permissions
+func moduleAccountPermissions() map[string][]string {
+	return map[string][]string{
 		authtypes.FeeCollectorName:     nil,
 		distrtypes.ModuleName:          nil,
 		minttypes.ModuleName:           {authtypes.Minter},
@@ -150,6 +155,19 @@ var (
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
+}
+
+var (
+	// DefaultNodeHome default home directories for the application daemon
+	DefaultNodeHome string
+ 
+	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
+	// non-dependant module elements, such as codec registration
+	// and genesis verification.
+	ModuleBasics = newModuleBasics()
+
+	// module account permissions
+	maccPerms = moduleAccountPermissions()
 )
 
 var (
