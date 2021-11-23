@@ -113,7 +113,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 
 		// Default genesis
 		templateDefault := `PortId: PortID`
-		content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+		content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 			path,
 			content,
 			templateDefault,
