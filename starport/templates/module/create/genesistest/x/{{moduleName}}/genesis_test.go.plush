@@ -14,7 +14,6 @@ func newTestGenesisState() types.GenesisState {
 	return types.GenesisState{
 		Params:	types.DefaultParams(),
 		<%= if (isIBC) { %>PortId: types.PortID,<% } %>
-		// this line is used by starport scaffolding # genesis/test/state
 	}
 }
 

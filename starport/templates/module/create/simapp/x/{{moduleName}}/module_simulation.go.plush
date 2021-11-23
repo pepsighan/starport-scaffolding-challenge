@@ -27,7 +27,6 @@ var (
 // newGenesisState creates a new Genesis state
 func newGenesisState() types.GenesisState {
 	return types.GenesisState{
-		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
 }
 
