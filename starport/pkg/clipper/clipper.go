@@ -26,8 +26,7 @@ func PasteGeneratedCodeSnippetAt(
 	}
 
 	if result.OffsetPosition == NoOffsetPosition {
-		// TODO: Return proper error type.
-		return "", fmt.Errorf("did not find any place to paste the generated code to")
+		return "", ErrNoPositionToGenerateCodeFound
 	}
 
 	offsetPosition := result.OffsetPosition
