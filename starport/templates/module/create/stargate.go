@@ -139,15 +139,31 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 
 			// If bank is a dependency, add account permissions to the module
 			if dep.Name == "bank" {
-				template = `%[2]vmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
-%[1]v`
+				template = `%[1]vmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking}`
 
 				snippet = fmt.Sprintf(
 					template,
-					module.PlaceholderSgAppMaccPerms,
 					opts.ModuleName,
 				)
-				content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
+
+				if strings.Count(content, module.PlaceholderSgAppMaccPerms) != 0 {
+					// Use the older placeholder mechanism for older codebase.
+					snippet += ",\n" + module.PlaceholderSgAppMaccPerms
+					content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
+				} else {
+					// Use the clipper based code generation for newer codebase.
+					content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+						path,
+						content,
+						snippet,
+						clipper.SelectOptions{
+							"functionName": "moduleAccountPermissions",
+						},
+					)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 
