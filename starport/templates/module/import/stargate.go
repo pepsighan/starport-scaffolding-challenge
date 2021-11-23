@@ -3,6 +3,7 @@ package moduleimport
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
@@ -169,11 +170,29 @@ func cmdModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 			return err
 		}
 
+		content := f.String()
+
 		templateArgs := `cosmoscmd.AddSubCmd(wasmcmd.GenesisWasmMsgCmd(app.DefaultNodeHome)),
-cosmoscmd.CustomizeStartCmd(wasmcmd.AddModuleInitFlags),
-		%[1]v`
-		replacementArgs := fmt.Sprintf(templateArgs, module.PlaceholderSgRootArgument)
-		content := replacer.Replace(f.String(), module.PlaceholderSgRootArgument, replacementArgs)
+cosmoscmd.CustomizeStartCmd(wasmcmd.AddModuleInitFlags)`
+
+		if strings.Count(content, module.PlaceholderSgRootArgument) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			templateArgs += ",\n" + module.PlaceholderSgRootArgument
+			content = replacer.Replace(content, module.PlaceholderSgRootArgument, templateArgs)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				templateArgs,
+				clipper.SelectOptions{
+					"functionName": "newRootCmd",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// import spm-extras.
 		content = replacer.Replace(content, "package main", `package main
