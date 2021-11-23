@@ -69,10 +69,25 @@ var (
 		replacementProposalHandlers := fmt.Sprintf(templateGovProposalHandlers, module.PlaceholderSgAppGovProposalHandlers)
 		content = replacer.Replace(content, module.PlaceholderSgAppGovProposalHandlers, replacementProposalHandlers)
 
-		templateModuleBasic := `%[1]v
-		wasm.AppModuleBasic{},`
-		replacementModuleBasic := fmt.Sprintf(templateModuleBasic, module.PlaceholderSgAppModuleBasic)
-		content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, replacementModuleBasic)
+		templateModuleBasic := `wasm.AppModuleBasic{}`
+		if strings.Count(content, module.PlaceholderSgAppModuleBasic) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			templateModuleBasic += ",\n" + module.PlaceholderSgAppModuleBasic
+			content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, templateModuleBasic)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				templateModuleBasic,
+				clipper.SelectOptions{
+					"functionName": "newModuleBasics",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateKeeperDeclaration := `%[1]v
 		wasmKeeper       wasm.Keeper
