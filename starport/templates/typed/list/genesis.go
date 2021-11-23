@@ -96,7 +96,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			templateTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+		content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 			path,
 			content,
 			funcArgSnippet,
