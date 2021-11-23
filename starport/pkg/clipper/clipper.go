@@ -103,7 +103,7 @@ func PasteGoReturningFunctionNewArgumentSnippetAt(
 			if hasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
-			return fmt.Sprintf(", %v", snippet)
+			return fmt.Sprintf(", %v,", snippet)
 		},
 	)
 }
@@ -122,7 +122,7 @@ func PasteGoReturningCompositeNewArgumentSnippetAt(
 			if hasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
-			return fmt.Sprintf(", %v", snippet)
+			return fmt.Sprintf(", %v,", snippet)
 		},
 	)
 }
