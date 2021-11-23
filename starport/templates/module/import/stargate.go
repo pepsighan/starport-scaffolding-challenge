@@ -93,17 +93,25 @@ var (
 	wasmKeeper       wasm.Keeper
 	scopedWasmKeeper capabilitykeeper.ScopedKeeper
 `
-		content, err = clipper.PasteCodeSnippetAt(
-			path,
-			content,
-			clipper.GoSelectStructNewFieldPosition,
-			clipper.SelectOptions{
-				"structName": "App",
-			},
-			structFieldSnippet,
-		)
-		if err != nil {
-			return err
+
+		if strings.Count(content, module.PlaceholderSgAppKeeperDeclaration) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			structFieldSnippet = module.PlaceholderSgAppKeeperDeclaration + structFieldSnippet
+			content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, structFieldSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteCodeSnippetAt(
+				path,
+				content,
+				clipper.GoSelectStructNewFieldPosition,
+				clipper.SelectOptions{
+					"structName": "App",
+				},
+				structFieldSnippet,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		templateDeclaration := `%[1]v
@@ -113,11 +121,18 @@ var (
 		content = replacer.Replace(content, module.PlaceholderSgAppScopedKeeper, snippet)
 
 		beforeInitReturnSnippet := `app.scopedWasmKeeper = scopedWasmKeeper`
-		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeInitReturnSnippet, clipper.SelectOptions{
-			"functionName": "New",
-		})
-		if err != nil {
-			return err
+		if strings.Count(content, module.PlaceholderSgAppBeforeInitReturn) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			beforeInitReturnSnippet = module.PlaceholderSgAppBeforeInitReturn + "\n" + beforeInitReturnSnippet
+			content = replacer.Replace(content, module.PlaceholderSgAppBeforeInitReturn, beforeInitReturnSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeInitReturnSnippet, clipper.SelectOptions{
+				"functionName": "New",
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		snippet = `wasm.StoreKey`
@@ -204,11 +219,18 @@ var (
 		}
 
 		beforeReturnSnippet := `paramsKeeper.Subspace(wasm.ModuleName)`
-		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
-			"functionName": "initParamsKeeper",
-		})
-		if err != nil {
-			return err
+		if strings.Count(content, module.PlaceholderSgAppParamSubspace) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			beforeReturnSnippet = module.PlaceholderSgAppParamSubspace + "\n" + beforeReturnSnippet
+			content = replacer.Replace(content, module.PlaceholderSgAppParamSubspace, beforeReturnSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+				"functionName": "initParamsKeeper",
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		newFile := genny.NewFileS(path, content)
