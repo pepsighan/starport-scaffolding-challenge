@@ -240,7 +240,8 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 			return err
 		}
 
-		templateValid := `%[2]vList: []types.%[2]v{
+		content := f.String()
+		templateValid := `%[1]vList: []types.%[1]v{
 	{
 		Id: 0,
 	},
@@ -248,14 +249,30 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 		Id: 1,
 	},
 },
-%[2]vCount: 2,
-%[1]v`
-		replacementValid := fmt.Sprintf(
+%[1]vCount: 2,`
+		validFieldSnippet := fmt.Sprintf(
 			templateValid,
-			module.PlaceholderTypesGenesisValidField,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), module.PlaceholderTypesGenesisValidField, replacementValid)
+
+		if strings.Count(content, module.PlaceholderTypesGenesisValidField) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			validFieldSnippet += "\n" + module.PlaceholderTypesGenesisValidField
+			content = replacer.Replace(content, module.PlaceholderTypesGenesisValidField, validFieldSnippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				validFieldSnippet,
+				clipper.SelectOptions{
+					"functionName": "newTestGenesisState",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateTests := `{
 	desc:     "duplicated %[2]v",
