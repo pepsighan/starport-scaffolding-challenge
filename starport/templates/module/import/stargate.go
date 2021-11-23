@@ -3,6 +3,7 @@ package moduleimport
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
@@ -68,17 +69,42 @@ var (
 		replacementProposalHandlers := fmt.Sprintf(templateGovProposalHandlers, module.PlaceholderSgAppGovProposalHandlers)
 		content = replacer.Replace(content, module.PlaceholderSgAppGovProposalHandlers, replacementProposalHandlers)
 
-		templateModuleBasic := `%[1]v
-		wasm.AppModuleBasic{},`
-		replacementModuleBasic := fmt.Sprintf(templateModuleBasic, module.PlaceholderSgAppModuleBasic)
-		content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, replacementModuleBasic)
+		templateModuleBasic := `wasm.AppModuleBasic{}`
+		if strings.Count(content, module.PlaceholderSgAppModuleBasic) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			templateModuleBasic += ",\n" + module.PlaceholderSgAppModuleBasic
+			content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, templateModuleBasic)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				templateModuleBasic,
+				clipper.SelectOptions{
+					"functionName": "newModuleBasics",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
-		templateKeeperDeclaration := `%[1]v
-		wasmKeeper       wasm.Keeper
-		scopedWasmKeeper capabilitykeeper.ScopedKeeper
-		`
-		replacementKeeperDeclaration := fmt.Sprintf(templateKeeperDeclaration, module.PlaceholderSgAppKeeperDeclaration)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, replacementKeeperDeclaration)
+		structFieldSnippet := `
+	wasmKeeper       wasm.Keeper
+	scopedWasmKeeper capabilitykeeper.ScopedKeeper
+`
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStructNewFieldPosition,
+			clipper.SelectOptions{
+				"structName": "App",
+			},
+			structFieldSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		templateDeclaration := `%[1]v
 		scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasm.ModuleName)
@@ -94,10 +120,25 @@ var (
 			return err
 		}
 
-		templateStoreKey := `%[1]v
-		wasm.StoreKey,`
-		replacementStoreKey := fmt.Sprintf(templateStoreKey, module.PlaceholderSgAppStoreKey)
-		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, replacementStoreKey)
+		snippet = `wasm.StoreKey`
+		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppStoreKey
+			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "newAppKVStoreKeys",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateKeeperDefinition := `%[1]v
 		wasmDir := filepath.Join(homePath, "wasm")
@@ -142,10 +183,25 @@ var (
 		replacementAppModule := fmt.Sprintf(templateAppModule, module.PlaceholderSgAppAppModule)
 		content = replacer.Replace(content, module.PlaceholderSgAppAppModule, replacementAppModule)
 
-		templateInitGenesis := `%[1]v
-		wasm.ModuleName,`
-		replacementInitGenesis := fmt.Sprintf(templateInitGenesis, module.PlaceholderSgAppInitGenesis)
-		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, replacementInitGenesis)
+		snippet = `wasm.ModuleName`
+		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
+			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "orderedInitGenesisModuleNames",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		beforeReturnSnippet := `paramsKeeper.Subspace(wasm.ModuleName)`
 		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
@@ -169,11 +225,29 @@ func cmdModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 			return err
 		}
 
+		content := f.String()
+
 		templateArgs := `cosmoscmd.AddSubCmd(wasmcmd.GenesisWasmMsgCmd(app.DefaultNodeHome)),
-cosmoscmd.CustomizeStartCmd(wasmcmd.AddModuleInitFlags),
-		%[1]v`
-		replacementArgs := fmt.Sprintf(templateArgs, module.PlaceholderSgRootArgument)
-		content := replacer.Replace(f.String(), module.PlaceholderSgRootArgument, replacementArgs)
+cosmoscmd.CustomizeStartCmd(wasmcmd.AddModuleInitFlags)`
+
+		if strings.Count(content, module.PlaceholderSgRootArgument) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			templateArgs += ",\n" + module.PlaceholderSgRootArgument
+			content = replacer.Replace(content, module.PlaceholderSgRootArgument, templateArgs)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				templateArgs,
+				clipper.SelectOptions{
+					"functionName": "newRootCmd",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// import spm-extras.
 		content = replacer.Replace(content, "package main", `package main

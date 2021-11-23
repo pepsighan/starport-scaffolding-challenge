@@ -7,6 +7,12 @@ import (
 	"<%= modulePath %>/x/<%= moduleName %>/types"
 )
 
+func newTestGenesisState() *types.GenesisState {
+	return &types.GenesisState{
+	<%= if (isIBC) { %>PortId: types.PortID,<% } %>
+   }
+}
+
 func TestGenesisState_Validate(t *testing.T) {
     for _, tc := range []struct {
     		desc          string
@@ -20,10 +26,7 @@ func TestGenesisState_Validate(t *testing.T) {
         },
         {
             desc:     "valid genesis state",
-            genState: &types.GenesisState{
-            	<%= if (isIBC) { %>PortId: types.PortID,<% } %>
-                // this line is used by starport scaffolding # types/genesis/validField
-            },
+            genState: newGenesisState(),
             valid:    true,
         },
         // this line is used by starport scaffolding # types/genesis/testcase

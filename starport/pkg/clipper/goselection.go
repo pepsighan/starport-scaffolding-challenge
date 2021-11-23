@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"strings"
 )
 
 // GoNewImportPositionData stores data collected during a selection of a new import position.
@@ -12,13 +13,25 @@ type GoNewImportPositionData struct {
 	OnlyURLNeeded    bool
 }
 
-// GoSelectBeforeFunctionReturnsPositionData stores data collected during a selection of the position before a return.
-type GoSelectBeforeFunctionReturnsPositionData struct {
+// GoBeforeFunctionReturnsPositionData stores data collected during a selection of the position before a return.
+type GoBeforeFunctionReturnsPositionData struct {
 	HasReturn bool
 }
 
+// GoReturningFunctionCallNewArgumentPositionData stores data collected during a selection of the position for
+// a new argument in a function call which is being returned.
+type GoReturningFunctionCallNewArgumentPositionData struct {
+	HasTrailingComma bool
+}
+
+// GoReturningCompositeNewArgumentPositionData stores data collected during a selection of the position for
+// a new argument in a struct which is being returned.
+type GoReturningCompositeNewArgumentPositionData struct {
+	HasTrailingComma bool
+}
+
 // goPositionFinder tries to find a required position during a walk of the Golang AST.
-type goPositionFinder func(result *PositionSelectorResult, options SelectOptions) goVisitor
+type goPositionFinder func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor
 
 // goVisitor visits each node in the Golang AST tree until it returns true.
 type goVisitor func(node ast.Node) bool
@@ -46,7 +59,7 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 		result := &PositionSelectorResult{
 			OffsetPosition: NoOffsetPosition,
 		}
-		ast.Walk(finder(result, options), parsedAST)
+		ast.Walk(finder(result, options, code), parsedAST)
 
 		if result.OffsetPosition != NoOffsetPosition {
 			// The offset position coming from the finder is 1-indexed. So making it 0-indexed.
@@ -59,7 +72,7 @@ func wrapGoFinder(finder goPositionFinder) PositionSelector {
 
 // GoSelectNewImportPosition selects a position where in a new import can be added.
 var GoSelectNewImportPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		return func(node ast.Node) bool {
 			switch n := node.(type) {
 			case *ast.File:
@@ -91,7 +104,7 @@ var GoSelectNewImportPosition = wrapGoFinder(
 // GoSelectNewGlobalPosition selects a position a new variable declaration, function or anything global can be
 // added.
 var GoSelectNewGlobalPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		return func(node ast.Node) bool {
 			// Select a position after the package declaration or all the imports.
 			switch n := node.(type) {
@@ -111,7 +124,7 @@ var GoSelectNewGlobalPosition = wrapGoFinder(
 // GoSelectBeforeFunctionReturnsPosition selects a position just before the last function return (implicit or explicit).
 // This only considers the function return which is at the function return.
 var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		functionName := options["functionName"]
 
 		return func(node ast.Node) bool {
@@ -123,13 +136,13 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 				case *ast.ReturnStmt:
 					// If there is a return, select a position before it.
 					result.OffsetPosition = OffsetPosition(l.Pos())
-					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+					result.Data = GoBeforeFunctionReturnsPositionData{
 						HasReturn: true,
 					}
 				default:
 					// Select the last position as there is no return here.
 					result.OffsetPosition = OffsetPosition(lastItem.End())
-					result.Data = GoSelectBeforeFunctionReturnsPositionData{
+					result.Data = GoBeforeFunctionReturnsPositionData{
 						HasReturn: false,
 					}
 				}
@@ -142,7 +155,7 @@ var GoSelectBeforeFunctionReturnsPosition = wrapGoFinder(
 
 // GoSelectStartOfFunctionPosition selects a position just after the function block starts.
 var GoSelectStartOfFunctionPosition = wrapGoFinder(
-	func(result *PositionSelectorResult, options SelectOptions) goVisitor {
+	func(result *PositionSelectorResult, options SelectOptions, _ string) goVisitor {
 		functionName := options["functionName"]
 
 		return func(node ast.Node) bool {
@@ -150,6 +163,98 @@ var GoSelectStartOfFunctionPosition = wrapGoFinder(
 				// Select the position after the left brace.
 				result.OffsetPosition = OffsetPosition(n.Body.Lbrace + 1)
 			}
+			return true
+		}
+	},
+)
+
+// GoSelectReturningFunctionCallNewArgumentPosition selects a position for a new argument in a function call that is
+// returning a value. This function call must be in the returning statement.
+var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				lastItem := n.Body.List[len(n.Body.List)-1]
+
+				if l, ok := lastItem.(*ast.ReturnStmt); ok && len(l.Results) == 1 {
+					ret := l.Results[0]
+
+					if r, ok := ret.(*ast.CallExpr); ok {
+						result.OffsetPosition = OffsetPosition(r.Rparen)
+						result.Data = GoReturningFunctionCallNewArgumentPositionData{}
+
+						// Check if the closing parenthesis is preceded by a comma.
+						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
+
+						// TODO: This won't work if there is a comment after the comma.
+						if leftPart[len(leftPart)-1] == ',' {
+							result.Data = GoReturningFunctionCallNewArgumentPositionData{
+								HasTrailingComma: true,
+							}
+						}
+					}
+				}
+			}
+
+			return true
+		}
+	},
+)
+
+// GoSelectReturningCompositeNewArgumentPosition selects a position for a new argument in a struct/map that is being
+// returned a value. This function call must be in the returning statement.
+var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
+		functionName := options["functionName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.FuncDecl); ok && n.Name.Name == functionName {
+				lastItem := n.Body.List[len(n.Body.List)-1]
+
+				if l, ok := lastItem.(*ast.ReturnStmt); ok && len(l.Results) == 1 {
+					ret := l.Results[0]
+
+					// If the returned value is a reference, cut the reference symbol off.
+					if r, ok := ret.(*ast.UnaryExpr); ok && r.Op == token.AND {
+						ret = r.X
+					}
+
+					if r, ok := ret.(*ast.CompositeLit); ok {
+						result.OffsetPosition = OffsetPosition(r.Rbrace)
+						result.Data = GoReturningCompositeNewArgumentPositionData{}
+
+						// Check if the closing brace is preceded by a comma.
+						leftPart := []rune(strings.TrimSpace(code[:r.Rbrace-1]))
+
+						// TODO: This won't work if there is a comment after the comma.
+						if leftPart[len(leftPart)-1] == ',' {
+							result.Data = GoReturningCompositeNewArgumentPositionData{
+								HasTrailingComma: true,
+							}
+						}
+					}
+				}
+			}
+
+			return true
+		}
+	},
+)
+
+// GoSelectStructNewFieldPosition selects a position for a new field in a struct definition.
+var GoSelectStructNewFieldPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
+		structName := options["structName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.TypeSpec); ok && n.Name.Name == structName {
+				if s, ok := n.Type.(*ast.StructType); ok {
+					result.OffsetPosition = OffsetPosition(s.Fields.Closing)
+				}
+			}
+
 			return true
 		}
 	},

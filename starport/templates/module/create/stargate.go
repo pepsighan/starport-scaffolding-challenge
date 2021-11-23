@@ -102,10 +102,27 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		}
 
 		// ModuleBasic
-		template = `%[2]vmodule.AppModuleBasic{},
-%[1]v`
-		snippet = fmt.Sprintf(template, module.PlaceholderSgAppModuleBasic, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, snippet)
+		template = `%[1]vmodule.AppModuleBasic{}`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+
+		if strings.Count(content, module.PlaceholderSgAppModuleBasic) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppModuleBasic
+			content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "newModuleBasics",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Keeper declaration
 		var scopedKeeperDeclaration string
@@ -114,23 +131,51 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 			// We set this placeholder so it is modified by the IBC module scaffolder
 			scopedKeeperDeclaration = module.PlaceholderIBCAppScopedKeeperDeclaration
 		}
-		template = `%[3]v
-		%[4]vKeeper %[2]vmodulekeeper.Keeper
-%[1]v`
+		template = `
+		%[2]v
+		%[3]vKeeper %[1]vmodulekeeper.Keeper
+`
 		snippet = fmt.Sprintf(
 			template,
-			module.PlaceholderSgAppKeeperDeclaration,
 			opts.ModuleName,
 			scopedKeeperDeclaration,
 			strings.Title(opts.ModuleName),
 		)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStructNewFieldPosition,
+			clipper.SelectOptions{
+				"structName": "App",
+			},
+			snippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Store key
-		template = `%[2]vmoduletypes.StoreKey,
-%[1]v`
-		snippet = fmt.Sprintf(template, module.PlaceholderSgAppStoreKey, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		template = `%[1]vmoduletypes.StoreKey`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+
+		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppStoreKey
+			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "newAppKVStoreKeys",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Module dependencies
 		var depArgs string
@@ -139,15 +184,31 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 
 			// If bank is a dependency, add account permissions to the module
 			if dep.Name == "bank" {
-				template = `%[2]vmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
-%[1]v`
+				template = `%[1]vmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking}`
 
 				snippet = fmt.Sprintf(
 					template,
-					module.PlaceholderSgAppMaccPerms,
 					opts.ModuleName,
 				)
-				content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
+
+				if strings.Count(content, module.PlaceholderSgAppMaccPerms) != 0 {
+					// Use the older placeholder mechanism for older codebase.
+					snippet += ",\n" + module.PlaceholderSgAppMaccPerms
+					content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
+				} else {
+					// Use the clipper based code generation for newer codebase.
+					content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+						path,
+						content,
+						snippet,
+						clipper.SelectOptions{
+							"functionName": "moduleAccountPermissions",
+						},
+					)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 
@@ -189,10 +250,26 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		content = replacer.ReplaceAll(content, module.PlaceholderSgAppAppModule, snippet)
 
 		// Init genesis
-		template = `%[2]vmoduletypes.ModuleName,
-%[1]v`
-		snippet = fmt.Sprintf(template, module.PlaceholderSgAppInitGenesis, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		template = `%[1]vmoduletypes.ModuleName`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
+			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "orderedInitGenesisModuleNames",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Param subspace
 		template = `paramsKeeper.Subspace(%[1]vmoduletypes.ModuleName)`

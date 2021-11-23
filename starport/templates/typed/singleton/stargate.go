@@ -261,14 +261,22 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateTypesDefault := `%[2]v: nil,
-%[1]v`
-		replacementTypesDefault := fmt.Sprintf(
+		templateTypesDefault := `%[1]v: nil`
+		funcArgSnippet := fmt.Sprintf(
 			templateTypesDefault,
-			typed.PlaceholderGenesisTypesDefault,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), typed.PlaceholderGenesisTypesDefault, replacementTypesDefault)
+		content, err := clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			path,
+			f.String(),
+			funcArgSnippet,
+			clipper.SelectOptions{
+				"functionName": "DefaultGenesis",
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
@@ -289,16 +297,36 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			sampleFields += field.GenesisArgs(rand.Intn(100) + 1)
 		}
 
+		content := f.String()
+
 		templateState := `%[2]v: &types.%[2]v{
 		%[3]v},
 		%[1]v`
-		replacementState := fmt.Sprintf(
+		testStateSnippet := fmt.Sprintf(
 			templateState,
 			module.PlaceholderGenesisTestState,
 			opts.TypeName.UpperCamel,
 			sampleFields,
 		)
-		content := replacer.Replace(f.String(), module.PlaceholderGenesisTestState, replacementState)
+
+		if strings.Count(content, module.PlaceholderGenesisTestState) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			testStateSnippet += ",\n" + module.PlaceholderGenesisTestState
+			content = replacer.Replace(content, module.PlaceholderGenesisTestState, testStateSnippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				testStateSnippet,
+				clipper.SelectOptions{
+					"functionName": "newTestGenesisState",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateAssert := `require.Equal(t, genesisState.%[1]v, got.%[1]v)`
 		beforeReturnSnippet := fmt.Sprintf(
@@ -331,16 +359,32 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 			sampleFields += field.GenesisArgs(rand.Intn(100) + 1)
 		}
 
-		templateValid := `%[2]v: &types.%[2]v{
-		%[3]v},
-%[1]v`
-		replacementValid := fmt.Sprintf(
+		content := f.String()
+		templateValid := `%[1]v: &types.%[1]v{
+		%[2]v}`
+		validFieldSnippet := fmt.Sprintf(
 			templateValid,
-			module.PlaceholderTypesGenesisValidField,
 			opts.TypeName.UpperCamel,
 			sampleFields,
 		)
-		content := replacer.Replace(f.String(), module.PlaceholderTypesGenesisValidField, replacementValid)
+		if strings.Count(content, module.PlaceholderTypesGenesisValidField) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			validFieldSnippet += ",\n" + module.PlaceholderTypesGenesisValidField
+			content = replacer.Replace(content, module.PlaceholderTypesGenesisValidField, validFieldSnippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				validFieldSnippet,
+				clipper.SelectOptions{
+					"functionName": "newTestGenesisState",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
