@@ -214,11 +214,11 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 		)
 
 		if strings.Count(content, module.PlaceholderGenesisTestState) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			testStateSnippet += ",\n" + module.PlaceholderGenesisTestState
 			content = replacer.Replace(content, module.PlaceholderGenesisTestState, testStateSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,
@@ -274,11 +274,11 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 		)
 
 		if strings.Count(content, module.PlaceholderTypesGenesisValidField) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			validFieldSnippet += ",\n" + module.PlaceholderTypesGenesisValidField
 			content = replacer.Replace(content, module.PlaceholderTypesGenesisValidField, validFieldSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,

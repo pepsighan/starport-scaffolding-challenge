@@ -43,11 +43,11 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *typed.Options) 
 			sampleIndexes[1],
 		)
 		if strings.Count(content, typed.PlaceholderSimappGenesisState) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			genesisStateSnippet += ",\n" + typed.PlaceholderSimappGenesisState
 			content = replacer.Replace(content, typed.PlaceholderSimappGenesisState, genesisStateSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,

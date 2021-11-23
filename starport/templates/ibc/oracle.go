@@ -152,11 +152,11 @@ import "%[1]v/%[2]v.proto";`
 		)
 
 		if strings.Count(content, Placeholder2) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += Placeholder2
 			content = replacer.Replace(content, Placeholder2, serviceSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteCodeSnippetAt(
 				path,
 				content,
@@ -227,11 +227,11 @@ import "%[1]v/%[2]v.proto";`
 		serviceSnippet := fmt.Sprintf(templateRPC, opts.QueryName.UpperCamel)
 
 		if strings.Count(content, PlaceholderProtoTxRPC) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += PlaceholderProtoTxRPC
 			content = replacer.Replace(content, PlaceholderProtoTxRPC, serviceSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteCodeSnippetAt(
 				path,
 				content,
@@ -325,11 +325,11 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 		content := f.String()
 
 		if strings.Count(content, Placeholder) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
 			content = replacer.Replace(f.String(), Placeholder, snippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			var err error
 			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
 				"functionName": "GetQueryCmd",
@@ -356,7 +356,7 @@ func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions)
 		content := f.String()
 
 		if strings.Count(content, Placeholder) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
 			content = replacer.Replace(f.String(), Placeholder, snippet)
 		} else {
@@ -394,11 +394,11 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		startOfFunctionSnippet := fmt.Sprintf(templateRegistry, opts.ModuleName, opts.QueryName.UpperCamel)
 
 		if strings.Count(content, Placeholder2) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + Placeholder2
 			content = replacer.Replace(content, Placeholder2, startOfFunctionSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteCodeSnippetAt(
 				path,
 				content,
@@ -421,11 +421,11 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		startOfFunctionSnippet = fmt.Sprintf(templateInterface, opts.QueryName.UpperCamel)
 
 		if strings.Count(content, Placeholder3) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + Placeholder3
 			content = replacer.Replace(content, Placeholder3, startOfFunctionSnippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteCodeSnippetAt(
 				path,
 				content,

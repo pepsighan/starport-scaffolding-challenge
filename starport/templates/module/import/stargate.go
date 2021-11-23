@@ -71,11 +71,11 @@ var (
 
 		templateModuleBasic := `wasm.AppModuleBasic{}`
 		if strings.Count(content, module.PlaceholderSgAppModuleBasic) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			templateModuleBasic += ",\n" + module.PlaceholderSgAppModuleBasic
 			content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, templateModuleBasic)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
 				path,
 				content,
@@ -122,11 +122,11 @@ var (
 
 		snippet = `wasm.StoreKey`
 		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += ",\n" + module.PlaceholderSgAppStoreKey
 			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
 				path,
 				content,
@@ -185,11 +185,11 @@ var (
 
 		snippet = `wasm.ModuleName`
 		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
 			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,
@@ -231,11 +231,11 @@ func cmdModifyStargate(replacer placeholder.Replacer, opts *ImportOptions) genny
 cosmoscmd.CustomizeStartCmd(wasmcmd.AddModuleInitFlags)`
 
 		if strings.Count(content, module.PlaceholderSgRootArgument) != 0 {
-			// Use the older placeholder mechanism for older codebase.
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			templateArgs += ",\n" + module.PlaceholderSgRootArgument
 			content = replacer.Replace(content, module.PlaceholderSgRootArgument, templateArgs)
 		} else {
-			// Use the clipper based code generation for newer codebase.
+			// And for newer codebase, we use clipper mechanism.
 			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
 				path,
 				content,
