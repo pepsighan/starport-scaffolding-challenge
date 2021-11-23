@@ -187,6 +187,8 @@ var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
 
 						// Check if the closing parenthesis is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
+
+						// TODO: This won't work if there is a comment after the comma.
 						if leftPart[len(leftPart)-1] == ',' {
 							result.Data = GoReturningFunctionCallNewArgumentPositionData{
 								HasTrailingComma: true,
@@ -225,6 +227,8 @@ var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
 
 						// Check if the closing brace is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rbrace-1]))
+
+						// TODO: This won't work if there is a comment after the comma.
 						if leftPart[len(leftPart)-1] == ',' {
 							result.Data = GoReturningCompositeNewArgumentPositionData{
 								HasTrailingComma: true,
