@@ -95,10 +95,10 @@ func PasteGoReturningFunctionNewArgumentSnippetAt(
 	return PasteGeneratedCodeSnippetAt(
 		path,
 		code,
-		GoSelectReturningCompositeNewArgumentPosition,
+		GoSelectReturningFunctionCallNewArgumentPosition,
 		options,
 		func(data interface{}) string {
-			hasTrailingComma := data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma
+			hasTrailingComma := data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma
 			if hasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
