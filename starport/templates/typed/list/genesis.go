@@ -197,7 +197,9 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			return err
 		}
 
-		templateState := `%[2]vList: []types.%[2]v{
+		content := f.String()
+
+		templateState := `%[1]vList: []types.%[1]v{
 		{
 			Id: 0,
 		},
@@ -205,14 +207,30 @@ func genesisTestsModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			Id: 1,
 		},
 	},
-	%[2]vCount: 2,
-	%[1]v`
-		replacementValid := fmt.Sprintf(
+	%[1]vCount: 2`
+		testStateSnippet := fmt.Sprintf(
 			templateState,
-			module.PlaceholderGenesisTestState,
 			opts.TypeName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), module.PlaceholderGenesisTestState, replacementValid)
+
+		if strings.Count(content, module.PlaceholderGenesisTestState) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			testStateSnippet += ",\n" + module.PlaceholderGenesisTestState
+			content = replacer.Replace(content, module.PlaceholderGenesisTestState, testStateSnippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				testStateSnippet,
+				clipper.SelectOptions{
+					"functionName": "newTestGenesisState",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateAssert := `require.ElementsMatch(t, genesisState.%[1]vList, got.%[1]vList)
   require.Equal(t, genesisState.%[1]vCount, got.%[1]vCount)`
