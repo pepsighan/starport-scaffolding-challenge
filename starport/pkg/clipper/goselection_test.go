@@ -341,3 +341,16 @@ func TestGoSelectReturningMapNewArgumentPositionInMultiLine(t *testing.T) {
 		t.Fatal("invalid data after position selection", result)
 	}
 }
+
+func TestGoSelectStructNewFieldPosition(t *testing.T) {
+	result, err := GoSelectStructNewFieldPosition("test.go", structReturnNoArgumentsFile, SelectOptions{
+		"structName": "Call",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.OffsetPosition != 57 {
+		t.Fatal("invalid struct new field position", result)
+	}
+}

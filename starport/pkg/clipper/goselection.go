@@ -242,3 +242,20 @@ var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
 		}
 	},
 )
+
+// GoSelectStructNewFieldPosition selects a position for a new field in a struct definition.
+var GoSelectStructNewFieldPosition = wrapGoFinder(
+	func(result *PositionSelectorResult, options SelectOptions, code string) goVisitor {
+		structName := options["structName"]
+
+		return func(node ast.Node) bool {
+			if n, ok := node.(*ast.TypeSpec); ok && n.Name.Name == structName {
+				if s, ok := n.Type.(*ast.StructType); ok {
+					result.OffsetPosition = OffsetPosition(s.Fields.Closing)
+				}
+			}
+
+			return true
+		}
+	},
+)
