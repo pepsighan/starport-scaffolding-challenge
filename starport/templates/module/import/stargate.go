@@ -173,10 +173,25 @@ var (
 		replacementAppModule := fmt.Sprintf(templateAppModule, module.PlaceholderSgAppAppModule)
 		content = replacer.Replace(content, module.PlaceholderSgAppAppModule, replacementAppModule)
 
-		templateInitGenesis := `%[1]v
-		wasm.ModuleName,`
-		replacementInitGenesis := fmt.Sprintf(templateInitGenesis, module.PlaceholderSgAppInitGenesis)
-		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, replacementInitGenesis)
+		snippet = `wasm.ModuleName`
+		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
+			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "orderedInitGenesisModuleNames",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		beforeReturnSnippet := `paramsKeeper.Subspace(wasm.ModuleName)`
 		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{

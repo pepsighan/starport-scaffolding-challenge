@@ -239,10 +239,26 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		content = replacer.ReplaceAll(content, module.PlaceholderSgAppAppModule, snippet)
 
 		// Init genesis
-		template = `%[2]vmoduletypes.ModuleName,
-%[1]v`
-		snippet = fmt.Sprintf(template, module.PlaceholderSgAppInitGenesis, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		template = `%[1]vmoduletypes.ModuleName`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
+			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "orderedInitGenesisModuleNames",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Param subspace
 		template = `paramsKeeper.Subspace(%[1]vmoduletypes.ModuleName)`
