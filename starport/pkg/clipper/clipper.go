@@ -26,8 +26,7 @@ func PasteGeneratedCodeSnippetAt(
 	}
 
 	if result.OffsetPosition == NoOffsetPosition {
-		// TODO: Return proper error type.
-		return "", fmt.Errorf("did not find any place to paste the generated code to")
+		return "", ErrNoPositionToGenerateCodeFound
 	}
 
 	offsetPosition := result.OffsetPosition
@@ -96,10 +95,10 @@ func PasteGoReturningFunctionNewArgumentSnippetAt(
 	return PasteGeneratedCodeSnippetAt(
 		path,
 		code,
-		GoSelectReturningCompositeNewArgumentPosition,
+		GoSelectReturningFunctionCallNewArgumentPosition,
 		options,
 		func(data interface{}) string {
-			hasTrailingComma := data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma
+			hasTrailingComma := data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma
 			if hasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
