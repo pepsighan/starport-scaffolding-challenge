@@ -510,7 +510,7 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 		%[2]v},
 	{
 		%[3]v},
-},`
+}`
 		validFieldSnippet := fmt.Sprintf(
 			templateValid,
 			opts.TypeName.UpperCamel,
@@ -520,7 +520,7 @@ func genesisTypesTestsModify(replacer placeholder.Replacer, opts *typed.Options)
 
 		if strings.Count(content, module.PlaceholderTypesGenesisValidField) != 0 {
 			// Use the older placeholder mechanism for older codebase.
-			validFieldSnippet += "\n" + module.PlaceholderTypesGenesisValidField
+			validFieldSnippet += ",\n" + module.PlaceholderTypesGenesisValidField
 			content = replacer.Replace(content, module.PlaceholderTypesGenesisValidField, validFieldSnippet)
 		} else {
 			// Use the clipper based code generation for newer codebase.

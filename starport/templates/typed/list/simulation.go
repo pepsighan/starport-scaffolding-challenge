@@ -34,7 +34,7 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *typed.Options) 
 			%[2]v
 		},
 	},
-	%[1]vCount: 2,`
+	%[1]vCount: 2`
 		genesisStateSnippet := fmt.Sprintf(
 			templateGs,
 			opts.TypeName.UpperCamel,
@@ -42,7 +42,7 @@ func moduleSimulationModify(replacer placeholder.Replacer, opts *typed.Options) 
 		)
 		if strings.Count(content, typed.PlaceholderSimappGenesisState) != 0 {
 			// Use the older placeholder mechanism for older codebase.
-			genesisStateSnippet += "\n" + typed.PlaceholderSimappGenesisState
+			genesisStateSnippet += ",\n" + typed.PlaceholderSimappGenesisState
 			content = replacer.Replace(content, typed.PlaceholderSimappGenesisState, genesisStateSnippet)
 		} else {
 			// Use the clipper based code generation for newer codebase.
