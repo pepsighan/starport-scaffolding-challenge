@@ -89,12 +89,22 @@ var (
 			}
 		}
 
-		templateKeeperDeclaration := `%[1]v
-		wasmKeeper       wasm.Keeper
-		scopedWasmKeeper capabilitykeeper.ScopedKeeper
-		`
-		replacementKeeperDeclaration := fmt.Sprintf(templateKeeperDeclaration, module.PlaceholderSgAppKeeperDeclaration)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, replacementKeeperDeclaration)
+		structFieldSnippet := `
+	wasmKeeper       wasm.Keeper
+	scopedWasmKeeper capabilitykeeper.ScopedKeeper
+`
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStructNewFieldPosition,
+			clipper.SelectOptions{
+				"structName": "App",
+			},
+			structFieldSnippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		templateDeclaration := `%[1]v
 		scopedWasmKeeper := app.CapabilityKeeper.ScopeToModule(wasm.ModuleName)

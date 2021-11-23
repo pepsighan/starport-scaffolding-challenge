@@ -131,17 +131,28 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 			// We set this placeholder so it is modified by the IBC module scaffolder
 			scopedKeeperDeclaration = module.PlaceholderIBCAppScopedKeeperDeclaration
 		}
-		template = `%[3]v
-		%[4]vKeeper %[2]vmodulekeeper.Keeper
-%[1]v`
+		template = `
+		%[2]v
+		%[3]vKeeper %[1]vmodulekeeper.Keeper
+`
 		snippet = fmt.Sprintf(
 			template,
-			module.PlaceholderSgAppKeeperDeclaration,
 			opts.ModuleName,
 			scopedKeeperDeclaration,
 			strings.Title(opts.ModuleName),
 		)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
+		content, err = clipper.PasteCodeSnippetAt(
+			path,
+			content,
+			clipper.GoSelectStructNewFieldPosition,
+			clipper.SelectOptions{
+				"structName": "App",
+			},
+			snippet,
+		)
+		if err != nil {
+			return err
+		}
 
 		// Store key
 		template = `%[1]vmoduletypes.StoreKey`
