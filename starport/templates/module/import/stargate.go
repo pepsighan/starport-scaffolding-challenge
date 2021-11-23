@@ -110,10 +110,25 @@ var (
 			return err
 		}
 
-		templateStoreKey := `%[1]v
-		wasm.StoreKey,`
-		replacementStoreKey := fmt.Sprintf(templateStoreKey, module.PlaceholderSgAppStoreKey)
-		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, replacementStoreKey)
+		snippet = `wasm.StoreKey`
+		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppStoreKey
+			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "newAppKVStoreKeys",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		templateKeeperDefinition := `%[1]v
 		wasmDir := filepath.Join(homePath, "wasm")

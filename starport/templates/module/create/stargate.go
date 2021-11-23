@@ -144,10 +144,27 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
 
 		// Store key
-		template = `%[2]vmoduletypes.StoreKey,
-%[1]v`
-		snippet = fmt.Sprintf(template, module.PlaceholderSgAppStoreKey, opts.ModuleName)
-		content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		template = `%[1]vmoduletypes.StoreKey`
+		snippet = fmt.Sprintf(template, opts.ModuleName)
+
+		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
+			// Use the older placeholder mechanism for older codebase.
+			snippet += ",\n" + module.PlaceholderSgAppStoreKey
+			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+		} else {
+			// Use the clipper based code generation for newer codebase.
+			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+				path,
+				content,
+				snippet,
+				clipper.SelectOptions{
+					"functionName": "newAppKVStoreKeys",
+				},
+			)
+			if err != nil {
+				return err
+			}
+		}
 
 		// Module dependencies
 		var depArgs string
