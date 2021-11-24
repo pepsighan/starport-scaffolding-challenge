@@ -116,7 +116,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *typed.Options) genn
 			}
 		}
 
-		templateTypesValidate := `// Check for duplicated ID in %[1]v
+		templateTypesValidate := `// Check for duplicated id in %[1]v
 	%[1]vIdMap := make(map[uint64]bool)
 	%[1]vCount := gs.Get%[2]vCount()
 	for _, elem := range gs.%[2]vList {

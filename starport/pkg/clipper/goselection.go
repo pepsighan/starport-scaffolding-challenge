@@ -45,28 +45,32 @@ func (f goVisitor) Visit(node ast.Node) ast.Visitor {
 }
 
 // wrapGoFinder creates a selector out of each finder.
-func wrapGoFinder(finder goPositionFinder) PositionSelector {
-	return func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
-		parsedAST, err := parser.ParseFile(token.NewFileSet(), path, []byte(code), 0)
-		if err != nil {
-			return nil, err
-		}
+func wrapGoFinder(finder goPositionFinder) *PositionSelector {
+	positionSelectorID += 1
+	return &PositionSelector{
+		id: positionSelectorID,
+		call: func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
+			parsedAST, err := parser.ParseFile(token.NewFileSet(), path, []byte(code), 0)
+			if err != nil {
+				return nil, err
+			}
 
-		if options == nil {
-			options = SelectOptions{}
-		}
+			if options == nil {
+				options = SelectOptions{}
+			}
 
-		result := &PositionSelectorResult{
-			OffsetPosition: NoOffsetPosition,
-		}
-		ast.Walk(finder(result, options, code), parsedAST)
+			result := &PositionSelectorResult{
+				OffsetPosition: NoOffsetPosition,
+			}
+			ast.Walk(finder(result, options, code), parsedAST)
 
-		if result.OffsetPosition != NoOffsetPosition {
-			// The offset position coming from the finder is 1-indexed. So making it 0-indexed.
-			result.OffsetPosition -= 1
-		}
+			if result.OffsetPosition != NoOffsetPosition {
+				// The offset position coming from the finder is 1-indexed. So making it 0-indexed.
+				result.OffsetPosition -= 1
+			}
 
-		return result, nil
+			return result, nil
+		},
 	}
 }
 

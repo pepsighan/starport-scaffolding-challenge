@@ -20,7 +20,7 @@ type Clipper struct {
 // PasteCodeSnippetAt pastes a code snippet at the location pointed by the selector and returns a new code. The path
 // is only used for context in errors.
 func (c *Clipper) PasteCodeSnippetAt(
-	path, code string, selector PositionSelector, options SelectOptions, snippet string,
+	path, code string, selector *PositionSelector, options SelectOptions, snippet string,
 ) (string, error) {
 	return c.PasteGeneratedCodeSnippetAt(path, code, selector, options, func(_ interface{}) string {
 		return snippet
@@ -30,9 +30,9 @@ func (c *Clipper) PasteCodeSnippetAt(
 // PasteGeneratedCodeSnippetAt pastes a generated code snippet at the location pointed by the selector and returns
 // a new code. The path is only used for context in errors.
 func (c *Clipper) PasteGeneratedCodeSnippetAt(
-	path, code string, selector PositionSelector, options SelectOptions, generator SnippetGenerator,
+	path, code string, selector *PositionSelector, options SelectOptions, generator SnippetGenerator,
 ) (string, error) {
-	result, err := selector(path, code, options)
+	result, err := selector.call(path, code, options)
 	if err != nil {
 		return "", err
 	}

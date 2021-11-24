@@ -114,7 +114,7 @@ func WithHome(home string) Option {
 	}
 }
 
-// WithChainID provides a specific chain ID for the commands that accept this option
+// WithChainID provides a specific chain id for the commands that accept this option
 func WithChainID(chainID string) Option {
 	return func(c *ChainCmd) {
 		c.chainID = chainID
@@ -400,7 +400,7 @@ func (c ChainCmd) ValidateGenesisCommand() step.Option {
 	return c.daemonCommand(command)
 }
 
-// ShowNodeIDCommand returns the command to print the node ID of the node for the chain
+// ShowNodeIDCommand returns the command to print the node id of the node for the chain
 func (c ChainCmd) ShowNodeIDCommand() step.Option {
 	command := []string{
 		constTendermint,
@@ -515,7 +515,7 @@ func (c ChainCmd) KeyringPassword() string {
 	return c.keyringPassword
 }
 
-// attachChainID appends the chain ID flag to the provided command
+// attachChainID appends the chain id flag to the provided command
 func (c ChainCmd) attachChainID(command []string) []string {
 	if c.chainID != "" {
 		command = append(command, []string{optionChainID, c.chainID}...)

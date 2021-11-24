@@ -224,7 +224,7 @@ func keysModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn 
 			return err
 		}
 
-		// Append version and the port ID in keys
+		// Append version and the port id in keys
 		templateName := `
 const (
 	// Version defines the current version the IBC module supports
@@ -245,7 +245,7 @@ const (
 		// PlaceholderIBCKeysPort
 		templatePort := `
 var (
-	// PortKey defines the key to store the port ID in store
+	// PortKey defines the key to store the port id in store
 	PortKey = KeyPrefix("%[1]v-port-")
 )`
 		varSnippet := fmt.Sprintf(templatePort, opts.ModuleName)
