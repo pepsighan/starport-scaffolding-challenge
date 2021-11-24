@@ -1,7 +1,6 @@
 package clipper
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/tendermint/starport/starport/pkg/placeholder"
@@ -15,7 +14,8 @@ type SnippetGenerator func(data interface{}) string
 type Clipper struct {
 	placeholder.Tracer
 	// Missing clipper selections that is needed for the clipper to work.
-	missingSelections []int
+	missingSelections       []int
+	missingSelectionOptions []SelectOptions
 }
 
 // New creates a new clipper.
@@ -25,12 +25,15 @@ func New() *Clipper {
 
 // Err if any selections or placeholders were missing during execution.
 func (c *Clipper) Err() error {
+	err := &ValidationError{tracerError: c.Tracer.Err()}
+
 	if len(c.missingSelections) > 0 {
-		// TODO: Bundle up the selection errors and placeholder errors into one.
-		return errors.New("some error")
+		for _, sel := range c.missingSelections {
+			err.missingSelections = append(err.missingSelections, fmt.Sprintf("%v", sel))
+		}
 	}
 
-	return c.Tracer.Err()
+	return err
 }
 
 // PasteCodeSnippetAt pastes a code snippet at the location pointed by the selector and returns a new code. The path
