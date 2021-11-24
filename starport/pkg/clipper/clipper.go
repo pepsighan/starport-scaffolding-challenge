@@ -28,8 +28,60 @@ func (c *Clipper) Err() error {
 	err := &ValidationError{tracerError: c.Tracer.Err()}
 
 	if len(c.missingSelections) > 0 {
-		for _, sel := range c.missingSelections {
-			err.missingSelections = append(err.missingSelections, fmt.Sprintf("%v", sel))
+		for id, sel := range c.missingSelections {
+			switch sel {
+			case ProtoSelectNewImportPosition.id:
+				err.missingSelections = append(err.missingSelections, "cannot find position to add new import")
+			case ProtoSelectNewMessageFieldPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find message %v", c.missingSelectionOptions[id]["name"]),
+				)
+			case ProtoSelectNewServiceMethodPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find service %v", c.missingSelectionOptions[id]["name"]),
+				)
+			case ProtoSelectNewOneOfFieldPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find message %v with oneof field %v",
+						c.missingSelectionOptions[id]["messageName"], c.missingSelectionOptions[id]["oneOfName"]),
+				)
+			case ProtoSelectLastPosition.id:
+				err.missingSelections = append(err.missingSelections, "cannot find last position of file")
+			case GoSelectNewImportPosition.id:
+				err.missingSelections = append(err.missingSelections, "cannot find position to add new import")
+			case GoSelectNewGlobalPosition.id:
+				err.missingSelections = append(err.missingSelections, "cannot find position for global declaration")
+			case GoSelectBeforeFunctionReturnsPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find function %v", c.missingSelectionOptions[id]["functionName"]),
+				)
+			case GoSelectStartOfFunctionPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find function %v", c.missingSelectionOptions[id]["functionName"]),
+				)
+			case GoSelectReturningFunctionCallNewArgumentPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find function %v which is returning value with a function call",
+						c.missingSelectionOptions[id]["functionName"]),
+				)
+			case GoSelectReturningCompositeNewArgumentPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find function %v which is returning value with a map/struct call",
+						c.missingSelectionOptions[id]["functionName"]),
+				)
+			case GoSelectStructNewFieldPosition.id:
+				err.missingSelections = append(
+					err.missingSelections,
+					fmt.Sprintf("cannot find struct %v", c.missingSelectionOptions[id]["structName"]),
+				)
+			}
 		}
 	}
 
