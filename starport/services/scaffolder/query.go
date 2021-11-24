@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/query"
@@ -14,7 +14,7 @@ import (
 // AddQuery adds a new query to scaffolded app
 func (s Scaffolder) AddQuery(
 	ctx context.Context,
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	moduleName,
 	queryName,
 	description string,
@@ -76,11 +76,11 @@ func (s Scaffolder) AddQuery(
 	)
 
 	// Scaffold
-	g, err = query.NewStargate(tracer, opts)
+	g, err = query.NewStargate(clip, opts)
 	if err != nil {
 		return sm, err
 	}
-	sm, err = xgenny.RunWithValidation(tracer, g)
+	sm, err = xgenny.RunWithValidation(clip, g)
 	if err != nil {
 		return sm, err
 	}

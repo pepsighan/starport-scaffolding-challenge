@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/field/datatype"
@@ -110,7 +110,7 @@ func TypeWithSigner(signer string) AddTypeOption {
 func (s Scaffolder) AddType(
 	ctx context.Context,
 	typeName string,
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	kind AddTypeKind,
 	options ...AddTypeOption,
 ) (sm xgenny.SourceModification, err error) {
@@ -178,7 +178,7 @@ func (s Scaffolder) AddType(
 	// Check and support MsgServer convention
 	gens, err = supportMsgServer(
 		gens,
-		tracer,
+		clip,
 		s.path,
 		&modulecreate.MsgServerOptions{
 			ModuleName: opts.ModuleName,
@@ -216,11 +216,11 @@ func (s Scaffolder) AddType(
 	// create the type generator depending on the model
 	switch {
 	case o.isList:
-		g, err = list.NewStargate(tracer, opts)
+		g, err = list.NewStargate(clip, opts)
 	case o.isMap:
-		g, err = mapGenerator(tracer, opts, o.indexes)
+		g, err = mapGenerator(clip, opts, o.indexes)
 	case o.isSingleton:
-		g, err = singleton.NewStargate(tracer, opts)
+		g, err = singleton.NewStargate(clip, opts)
 	default:
 		g, err = dry.NewStargate(opts)
 	}
@@ -230,7 +230,7 @@ func (s Scaffolder) AddType(
 
 	// run the generation
 	gens = append(gens, g)
-	sm, err = xgenny.RunWithValidation(tracer, gens...)
+	sm, err = xgenny.RunWithValidation(clip, gens...)
 	if err != nil {
 		return sm, err
 	}
@@ -271,7 +271,7 @@ func checkForbiddenTypeField(name string) error {
 }
 
 // mapGenerator returns the template generator for a map
-func mapGenerator(replacer placeholder.Replacer, opts *typed.Options, indexes []string) (*genny.Generator, error) {
+func mapGenerator(clip *clipper.Clipper, opts *typed.Options, indexes []string) (*genny.Generator, error) {
 	// Parse indexes with the associated type
 	parsedIndexes, err := field.ParseFields(indexes, checkForbiddenTypeIndex)
 	if err != nil {
@@ -290,5 +290,5 @@ func mapGenerator(replacer placeholder.Replacer, opts *typed.Options, indexes []
 	}
 
 	opts.Indexes = parsedIndexes
-	return maptype.NewStargate(replacer, opts)
+	return maptype.NewStargate(clip, opts)
 }

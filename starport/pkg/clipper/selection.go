@@ -16,5 +16,11 @@ type PositionSelectorResult struct {
 	Data interface{}
 }
 
+// positionSelectorID is a counter for the id to make comparison between selectors easy.
+var positionSelectorID = 0
+
 // PositionSelector is a configurable selector which can select a position in code.
-type PositionSelector func(path, code string, options SelectOptions) (*PositionSelectorResult, error)
+type PositionSelector struct {
+	id   int
+	call func(path, code string, options SelectOptions) (*PositionSelectorResult, error)
+}

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/services/scaffolder"
 )
 
@@ -55,7 +55,7 @@ func createBandchainHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	sm, err := sc.AddOracle(placeholder.New(), module, oracle, options...)
+	sm, err := sc.AddOracle(clipper.New(), module, oracle, options...)
 	if err != nil {
 		return err
 	}

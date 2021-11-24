@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 )
 
 func NewScaffoldWasm() *cobra.Command {
@@ -33,7 +33,7 @@ func scaffoldWasmHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	sm, err := sc.ImportModule(placeholder.New(), "wasm")
+	sm, err := sc.ImportModule(clipper.New(), "wasm")
 	if err != nil {
 		return err
 	}

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/services/scaffolder"
 )
 
@@ -58,7 +58,7 @@ func messageHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	sm, err := sc.AddMessage(cmd.Context(), placeholder.New(), module, args[0], args[1:], resFields, options...)
+	sm, err := sc.AddMessage(cmd.Context(), clipper.New(), module, args[0], args[1:], resFields, options...)
 	if err != nil {
 		return err
 	}

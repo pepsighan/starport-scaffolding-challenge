@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/services/scaffolder"
 )
 
@@ -83,7 +83,7 @@ func scaffoldType(
 		return err
 	}
 
-	sm, err := sc.AddType(cmd.Context(), typeName, placeholder.New(), kind, options...)
+	sm, err := sc.AddType(cmd.Context(), typeName, clipper.New(), kind, options...)
 	if err != nil {
 		return err
 	}

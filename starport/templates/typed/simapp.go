@@ -6,11 +6,10 @@ import (
 
 	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 )
 
 func ModuleSimulationMsgModify(
-	replacer placeholder.Replacer,
+	clip *clipper.Clipper,
 	path,
 	content,
 	moduleName string,
@@ -30,7 +29,7 @@ const (
 )`
 		constSnippet := fmt.Sprintf(templateConst, msg, typeName.UpperCamel)
 		var err error
-		content, err = clipper.PasteCodeSnippetAt(path, content, clipper.GoSelectNewGlobalPosition, nil, constSnippet)
+		content, err = clip.PasteCodeSnippetAt(path, content, clipper.GoSelectNewGlobalPosition, nil, constSnippet)
 		if err != nil {
 			return "", err
 		}
@@ -51,10 +50,10 @@ const (
 		if strings.Count(content, PlaceholderSimappOperation) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			beforeReturnSnippet += "\n" + PlaceholderSimappOperation
-			content = replacer.Replace(content, PlaceholderSimappOperation, beforeReturnSnippet)
+			content = clip.Replace(content, PlaceholderSimappOperation, beforeReturnSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
 				"functionName": "WeightedOperations",
 			})
 			if err != nil {

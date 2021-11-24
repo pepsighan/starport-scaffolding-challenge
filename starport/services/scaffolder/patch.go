@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gobuffalo/genny"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	modulecreate "github.com/tendermint/starport/starport/templates/module/create"
 )
 
@@ -61,7 +61,7 @@ func supportGenesisTests(
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-031-msg-service.md
 func supportMsgServer(
 	gens []*genny.Generator,
-	replacer placeholder.Replacer,
+	clip *clipper.Clipper,
 	appPath string,
 	opts *modulecreate.MsgServerOptions,
 ) ([]*genny.Generator, error) {
@@ -72,7 +72,7 @@ func supportMsgServer(
 	}
 	if !msgServerDefined {
 		// Patch the module to support the convention
-		g, err := modulecreate.AddMsgServerConventionToLegacyModule(replacer, opts)
+		g, err := modulecreate.AddMsgServerConventionToLegacyModule(clip, opts)
 		if err != nil {
 			return nil, err
 		}

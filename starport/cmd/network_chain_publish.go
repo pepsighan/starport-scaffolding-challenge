@@ -35,7 +35,7 @@ func NewNetworkChainPublish() *cobra.Command {
 	c.Flags().String(flagTag, "", "Git tag to use for the repo")
 	c.Flags().String(flagHash, "", "Git hash to use for the repo")
 	c.Flags().String(flagGenesis, "", "URL to a custom Genesis")
-	c.Flags().Uint64(flagCampaign, 0, "Campaign ID to use for this network")
+	c.Flags().Uint64(flagCampaign, 0, "Campaign id to use for this network")
 	c.Flags().Bool(flagNoCheck, false, "Skip verifying chain's integrity")
 	c.Flags().String(flagFrom, cosmosaccount.DefaultAccount, "Account name to use for sending transactions to SPN")
 	c.Flags().AddFlagSet(flagSetKeyringBackend())
@@ -151,8 +151,8 @@ func networkChainPublishHandler(cmd *cobra.Command, args []string) error {
 	s.Stop()
 
 	fmt.Printf("%s Network published \n", clispinner.OK)
-	fmt.Printf("%s Launch ID: %d \n", clispinner.Bullet, launchID)
-	fmt.Printf("%s Campaign ID: %d \n", clispinner.Bullet, campaignID)
+	fmt.Printf("%s Launch id: %d \n", clispinner.Bullet, launchID)
+	fmt.Printf("%s Campaign id: %d \n", clispinner.Bullet, campaignID)
 
 	return nil
 }

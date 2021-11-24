@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/services/scaffolder"
 )
 
@@ -41,7 +41,7 @@ func scaffoldChainHandler(cmd *cobra.Command, args []string) error {
 		appPath            = flagGetPath(cmd)
 	)
 
-	appdir, err := scaffolder.Init(placeholder.New(), appPath, name, addressPrefix, noDefaultModule)
+	appdir, err := scaffolder.Init(clipper.New(), appPath, name, addressPrefix, noDefaultModule)
 	if err != nil {
 		return err
 	}

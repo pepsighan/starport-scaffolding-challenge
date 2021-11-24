@@ -9,7 +9,6 @@ import (
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
 	"github.com/tendermint/starport/starport/pkg/clipper"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
@@ -73,17 +72,17 @@ func NewStargate(opts *CreateOptions) (*genny.Generator, error) {
 }
 
 // NewStargateAppModify returns generator with modifications required to register a module in the app.
-func NewStargateAppModify(replacer placeholder.Replacer, opts *CreateOptions) *genny.Generator {
+func NewStargateAppModify(clip *clipper.Clipper, opts *CreateOptions) *genny.Generator {
 	g := genny.New()
-	g.RunFn(appModifyStargate(replacer, opts))
+	g.RunFn(appModifyStargate(clip, opts))
 	if opts.IsIBC {
-		g.RunFn(appIBCModify(replacer, opts))
+		g.RunFn(appIBCModify(clip, opts))
 	}
 	return g
 }
 
 // app.go modification on Stargate when creating a module
-func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func appModifyStargate(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, module.PathAppGo)
 		f, err := r.Disk.Find(path)
@@ -96,7 +95,7 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 	%[1]vmodulekeeper "%[2]v/x/%[1]v/keeper"
 	%[1]vmoduletypes "%[2]v/x/%[1]v/types"`
 		snippet := fmt.Sprintf(template, opts.ModuleName, opts.ModulePath)
-		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), snippet)
+		content, err := clip.PasteGoImportSnippetAt(path, f.String(), snippet)
 		if err != nil {
 			return err
 		}
@@ -108,10 +107,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		if strings.Count(content, module.PlaceholderSgAppModuleBasic) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += ",\n" + module.PlaceholderSgAppModuleBasic
-			content = replacer.Replace(content, module.PlaceholderSgAppModuleBasic, snippet)
+			content = clip.Replace(content, module.PlaceholderSgAppModuleBasic, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			content, err = clip.PasteGoReturningFunctionNewArgumentSnippetAt(
 				path,
 				content,
 				snippet,
@@ -145,10 +144,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		if strings.Count(content, module.PlaceholderSgAppKeeperDeclaration) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += module.PlaceholderSgAppKeeperDeclaration
-			content = replacer.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
+			content = clip.Replace(content, module.PlaceholderSgAppKeeperDeclaration, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStructNewFieldPosition,
@@ -169,10 +168,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		if strings.Count(content, module.PlaceholderSgAppStoreKey) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += ",\n" + module.PlaceholderSgAppStoreKey
-			content = replacer.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
+			content = clip.Replace(content, module.PlaceholderSgAppStoreKey, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoReturningFunctionNewArgumentSnippetAt(
+			content, err = clip.PasteGoReturningFunctionNewArgumentSnippetAt(
 				path,
 				content,
 				snippet,
@@ -202,10 +201,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 				if strings.Count(content, module.PlaceholderSgAppMaccPerms) != 0 {
 					// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 					snippet += ",\n" + module.PlaceholderSgAppMaccPerms
-					content = replacer.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
+					content = clip.Replace(content, module.PlaceholderSgAppMaccPerms, snippet)
 				} else {
 					// And for newer codebase, we use clipper mechanism.
-					content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+					content, err = clip.PasteGoReturningCompositeNewArgumentSnippetAt(
 						path,
 						content,
 						snippet,
@@ -249,13 +248,13 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 			strings.Title(opts.ModuleName),
 			depArgs,
 		)
-		content = replacer.Replace(content, module.PlaceholderSgAppKeeperDefinition, snippet)
+		content = clip.Replace(content, module.PlaceholderSgAppKeeperDefinition, snippet)
 
 		// App Module
 		template = `%[2]vModule,
 %[1]v`
 		snippet = fmt.Sprintf(template, module.PlaceholderSgAppAppModule, opts.ModuleName)
-		content = replacer.ReplaceAll(content, module.PlaceholderSgAppAppModule, snippet)
+		content = clip.ReplaceAll(content, module.PlaceholderSgAppAppModule, snippet)
 
 		// Init genesis
 		template = `%[1]vmoduletypes.ModuleName`
@@ -263,10 +262,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		if strings.Count(content, module.PlaceholderSgAppInitGenesis) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += ",\n" + module.PlaceholderSgAppInitGenesis
-			content = replacer.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
+			content = clip.Replace(content, module.PlaceholderSgAppInitGenesis, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+			content, err = clip.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,
 				snippet,
@@ -286,10 +285,10 @@ func appModifyStargate(replacer placeholder.Replacer, opts *CreateOptions) genny
 		if strings.Count(content, module.PlaceholderSgAppParamSubspace) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + module.PlaceholderSgAppParamSubspace
-			content = replacer.Replace(content, module.PlaceholderSgAppParamSubspace, snippet)
+			content = clip.Replace(content, module.PlaceholderSgAppParamSubspace, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
 				"functionName": "initParamsKeeper",
 			})
 			if err != nil {

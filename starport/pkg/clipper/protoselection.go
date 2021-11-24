@@ -23,27 +23,32 @@ type ProtoNewOneOfFieldPositionData struct {
 type protoPositionFinder func(result *PositionSelectorResult, options SelectOptions, offsetMap lineOffsetMap) ast.VisitFunc
 
 // wrapProtoFinder creates a selector out of each finder.
-func wrapProtoFinder(find protoPositionFinder) PositionSelector {
-	return func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
-		parsedAST, err := parseProto(path, code)
-		if err != nil {
-			return nil, err
-		}
+func wrapProtoFinder(find protoPositionFinder) *PositionSelector {
+	positionSelectorID += 1
 
-		offsetMap, err := lineOffsetMapOfFile(code)
-		if err != nil {
-			return nil, err
-		}
+	return &PositionSelector{
+		id: positionSelectorID,
+		call: func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
+			parsedAST, err := parseProto(path, code)
+			if err != nil {
+				return nil, err
+			}
 
-		if options == nil {
-			options = SelectOptions{}
-		}
+			offsetMap, err := lineOffsetMapOfFile(code)
+			if err != nil {
+				return nil, err
+			}
 
-		result := &PositionSelectorResult{
-			OffsetPosition: NoOffsetPosition,
-		}
-		ast.Walk(parsedAST, find(result, options, offsetMap))
-		return result, nil
+			if options == nil {
+				options = SelectOptions{}
+			}
+
+			result := &PositionSelectorResult{
+				OffsetPosition: NoOffsetPosition,
+			}
+			ast.Walk(parsedAST, find(result, options, offsetMap))
+			return result, nil
+		},
 	}
 }
 
@@ -161,19 +166,25 @@ var ProtoSelectNewOneOfFieldPosition = wrapProtoFinder(
 )
 
 // ProtoSelectLastPosition selects the last position within the code.
-func ProtoSelectLastPosition(path, code string, _ SelectOptions) (*PositionSelectorResult, error) {
-	parsedAST, err := parseProto(path, code)
-	if err != nil {
-		return nil, err
-	}
+var ProtoSelectLastPosition = &PositionSelector{
+	id: func() int {
+		positionSelectorID += 1
+		return positionSelectorID
+	}(),
+	call: func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
+		parsedAST, err := parseProto(path, code)
+		if err != nil {
+			return nil, err
+		}
 
-	offsetMap, err := lineOffsetMapOfFile(code)
-	if err != nil {
-		return nil, err
-	}
+		offsetMap, err := lineOffsetMapOfFile(code)
+		if err != nil {
+			return nil, err
+		}
 
-	result := PositionSelectorResult{
-		OffsetPosition: offsetForProtoSourcePos(offsetMap, parsedAST.End()),
-	}
-	return &result, nil
+		result := PositionSelectorResult{
+			OffsetPosition: offsetForProtoSourcePos(offsetMap, parsedAST.End()),
+		}
+		return &result, nil
+	},
 }

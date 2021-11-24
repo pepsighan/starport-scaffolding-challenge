@@ -9,7 +9,6 @@ import (
 	"github.com/gobuffalo/plush"
 	"github.com/gobuffalo/plushgen"
 	"github.com/tendermint/starport/starport/pkg/clipper"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
@@ -18,16 +17,16 @@ import (
 )
 
 // NewIBC returns the generator to scaffold the implementation of the IBCModule interface inside a module
-func NewIBC(replacer placeholder.Replacer, opts *CreateOptions) (*genny.Generator, error) {
+func NewIBC(clip *clipper.Clipper, opts *CreateOptions) (*genny.Generator, error) {
 	var (
 		g        = genny.New()
 		template = xgenny.NewEmbedWalker(fsIBC, "ibc/", opts.AppPath)
 	)
 
-	g.RunFn(genesisModify(replacer, opts))
-	g.RunFn(genesisTypesModify(replacer, opts))
-	g.RunFn(genesisProtoModify(replacer, opts))
-	g.RunFn(keysModify(replacer, opts))
+	g.RunFn(genesisModify(clip, opts))
+	g.RunFn(genesisTypesModify(clip, opts))
+	g.RunFn(genesisProtoModify(clip, opts))
+	g.RunFn(keysModify(clip, opts))
 
 	if err := g.Box(template); err != nil {
 		return g, err
@@ -49,7 +48,7 @@ func NewIBC(replacer placeholder.Replacer, opts *CreateOptions) (*genny.Generato
 	return g, nil
 }
 
-func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func genesisModify(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "genesis.go")
 		f, err := r.Disk.Find(path)
@@ -76,11 +75,11 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 		if strings.Count(content, typed.PlaceholderGenesisModuleInit) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			initSnippet = typed.PlaceholderGenesisModuleInit + initSnippet
-			content = replacer.Replace(content, typed.PlaceholderGenesisModuleInit, initSnippet)
+			content = clip.Replace(content, typed.PlaceholderGenesisModuleInit, initSnippet)
 
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStartOfFunctionPosition,
@@ -99,10 +98,10 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 		if strings.Count(content, typed.PlaceholderGenesisModuleExport) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			templateExport += "\n" + typed.PlaceholderGenesisModuleExport
-			content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, templateExport)
+			content = clip.Replace(content, typed.PlaceholderGenesisModuleExport, templateExport)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
 				"functionName": "ExportGenesis",
 			})
 			if err != nil {
@@ -115,7 +114,7 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 	}
 }
 
-func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func genesisTypesModify(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "types/genesis.go")
 		f, err := r.Disk.Find(path)
@@ -125,7 +124,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 
 		// Import
 		importSnippet := `host "github.com/cosmos/ibc-go/modules/core/24-host"`
-		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		content, err := clip.PasteGoImportSnippetAt(path, f.String(), importSnippet)
 		if err != nil {
 			return err
 		}
@@ -136,10 +135,10 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		if strings.Count(content, typed.PlaceholderGenesisTypesDefault) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			templateDefault += "\n" + typed.PlaceholderGenesisTypesDefault
-			content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, templateDefault)
+			content = clip.Replace(content, typed.PlaceholderGenesisTypesDefault, templateDefault)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+			content, err = clip.PasteGoReturningCompositeNewArgumentSnippetAt(
 				path,
 				content,
 				templateDefault,
@@ -161,10 +160,10 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		if strings.Count(content, typed.PlaceholderGenesisTypesValidate) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			beforeReturnSnippet += "\n" + typed.PlaceholderGenesisTypesValidate
-			content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, beforeReturnSnippet)
+			content = clip.Replace(content, typed.PlaceholderGenesisTypesValidate, beforeReturnSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
 				"functionName": "Validate",
 			})
 			if err != nil {
@@ -177,7 +176,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 	}
 }
 
-func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func genesisProtoModify(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)
@@ -194,10 +193,10 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		if strings.Count(content, typed.PlaceholderGenesisProtoState) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += typed.PlaceholderGenesisProtoState
-			content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, snippet)
+			content = clip.Replace(content, typed.PlaceholderGenesisProtoState, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGeneratedCodeSnippetAt(
+			content, err = clip.PasteGeneratedCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewMessageFieldPosition,
@@ -216,7 +215,7 @@ func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 	}
 }
 
-func keysModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func keysModify(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "types/keys.go")
 		f, err := r.Disk.Find(path)
@@ -224,7 +223,7 @@ func keysModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn 
 			return err
 		}
 
-		// Append version and the port ID in keys
+		// Append version and the port id in keys
 		templateName := `
 const (
 	// Version defines the current version the IBC module supports
@@ -234,7 +233,7 @@ const (
 	PortID = "%[1]v"
 )`
 		constSnippet := fmt.Sprintf(templateName, opts.ModuleName)
-		content, err := clipper.PasteCodeSnippetAt(
+		content, err := clip.PasteCodeSnippetAt(
 			path,
 			f.String(),
 			clipper.GoSelectNewGlobalPosition,
@@ -245,11 +244,11 @@ const (
 		// PlaceholderIBCKeysPort
 		templatePort := `
 var (
-	// PortKey defines the key to store the port ID in store
+	// PortKey defines the key to store the port id in store
 	PortKey = KeyPrefix("%[1]v-port-")
 )`
 		varSnippet := fmt.Sprintf(templatePort, opts.ModuleName)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.GoSelectNewGlobalPosition,
@@ -265,7 +264,7 @@ var (
 	}
 }
 
-func appIBCModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
+func appIBCModify(clip *clipper.Clipper, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, module.PathAppGo)
 		f, err := r.Disk.Find(path)
@@ -281,12 +280,12 @@ func appIBCModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunF
 			module.PlaceholderIBCAppRouter,
 			opts.ModuleName,
 		)
-		content := replacer.Replace(f.String(), module.PlaceholderIBCAppRouter, replacementRouter)
+		content := clip.Replace(f.String(), module.PlaceholderIBCAppRouter, replacementRouter)
 
 		// Scoped keeper declaration for the module
 		templateScopedKeeperDeclaration := `Scoped%[1]vKeeper capabilitykeeper.ScopedKeeper`
 		replacementScopedKeeperDeclaration := fmt.Sprintf(templateScopedKeeperDeclaration, strings.Title(opts.ModuleName))
-		content = replacer.Replace(content, module.PlaceholderIBCAppScopedKeeperDeclaration, replacementScopedKeeperDeclaration)
+		content = clip.Replace(content, module.PlaceholderIBCAppScopedKeeperDeclaration, replacementScopedKeeperDeclaration)
 
 		// Scoped keeper definition
 		templateScopedKeeperDefinition := `scoped%[1]vKeeper := app.CapabilityKeeper.ScopeToModule(%[2]vmoduletypes.ModuleName)
@@ -296,7 +295,7 @@ app.Scoped%[1]vKeeper = scoped%[1]vKeeper`
 			strings.Title(opts.ModuleName),
 			opts.ModuleName,
 		)
-		content = replacer.Replace(content, module.PlaceholderIBCAppScopedKeeperDefinition, replacementScopedKeeperDefinition)
+		content = clip.Replace(content, module.PlaceholderIBCAppScopedKeeperDefinition, replacementScopedKeeperDefinition)
 
 		// New argument passed to the module keeper
 		templateKeeperArgument := `app.IBCKeeper.ChannelKeeper,
@@ -306,7 +305,7 @@ scoped%[1]vKeeper,`
 			templateKeeperArgument,
 			strings.Title(opts.ModuleName),
 		)
-		content = replacer.Replace(content, module.PlaceholderIBCAppKeeperArgument, replacementKeeperArgument)
+		content = clip.Replace(content, module.PlaceholderIBCAppKeeperArgument, replacementKeeperArgument)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
