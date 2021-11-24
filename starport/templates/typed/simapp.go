@@ -2,6 +2,7 @@ package typed
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
@@ -46,11 +47,19 @@ const (
 		%[3]vsimulation.SimulateMsg%[1]v%[2]v(am.accountKeeper, am.bankKeeper, am.keeper),
 	))`
 		beforeReturnSnippet := fmt.Sprintf(templateOp, msg, typeName.UpperCamel, moduleName)
-		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
-			"functionName": "WeightedOperations",
-		})
-		if err != nil {
-			return "", err
+
+		if strings.Count(content, PlaceholderSimappOperation) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			beforeReturnSnippet += "\n" + PlaceholderSimappOperation
+			content = replacer.Replace(content, PlaceholderSimappOperation, beforeReturnSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+				"functionName": "WeightedOperations",
+			})
+			if err != nil {
+				return "", err
+			}
 		}
 	}
 	return content, nil

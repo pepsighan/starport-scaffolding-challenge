@@ -3,6 +3,7 @@ package modulecreate
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/plush"
@@ -12,6 +13,7 @@ import (
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
+	"github.com/tendermint/starport/starport/templates/module"
 	"github.com/tendermint/starport/starport/templates/typed"
 )
 
@@ -82,17 +84,25 @@ func codecPath(replacer placeholder.Replacer, appPath, moduleName string) genny.
 		// Add RegisterMsgServiceDesc method call
 		startOfFunctionSnippet := `
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)`
-		content, err = clipper.PasteCodeSnippetAt(
-			path,
-			content,
-			clipper.GoSelectStartOfFunctionPosition,
-			clipper.SelectOptions{
-				"functionName": "RegisterInterfaces",
-			},
-			startOfFunctionSnippet,
-		)
-		if err != nil {
-			return err
+
+		if strings.Count(content, module.Placeholder3) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			startOfFunctionSnippet = module.Placeholder3 + startOfFunctionSnippet
+			content = replacer.Replace(content, module.Placeholder3, startOfFunctionSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteCodeSnippetAt(
+				path,
+				content,
+				clipper.GoSelectStartOfFunctionPosition,
+				clipper.SelectOptions{
+					"functionName": "RegisterInterfaces",
+				},
+				startOfFunctionSnippet,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		newFile := genny.NewFileS(path, content)

@@ -14,6 +14,7 @@ import (
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
 	"github.com/tendermint/starport/starport/templates/module"
+	"github.com/tendermint/starport/starport/templates/typed"
 )
 
 // NewIBC returns the generator to scaffold the implementation of the IBCModule interface inside a module
@@ -25,7 +26,7 @@ func NewIBC(replacer placeholder.Replacer, opts *CreateOptions) (*genny.Generato
 
 	g.RunFn(genesisModify(replacer, opts))
 	g.RunFn(genesisTypesModify(replacer, opts))
-	g.RunFn(genesisProtoModify(opts))
+	g.RunFn(genesisProtoModify(replacer, opts))
 	g.RunFn(keysModify(replacer, opts))
 
 	if err := g.Box(template); err != nil {
@@ -56,6 +57,8 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 			return err
 		}
 
+		content := f.String()
+
 		// Genesis init
 		initSnippet := `
 	k.SetPort(ctx, genState.PortId)
@@ -69,26 +72,42 @@ func genesisModify(replacer placeholder.Replacer, opts *CreateOptions) genny.Run
 			panic("could not claim port capability: " + err.Error())
 		}
 	}`
-		content, err := clipper.PasteCodeSnippetAt(
-			path,
-			f.String(),
-			clipper.GoSelectStartOfFunctionPosition,
-			clipper.SelectOptions{
-				"functionName": "InitGenesis",
-			},
-			initSnippet,
-		)
-		if err != nil {
-			return err
+
+		if strings.Count(content, typed.PlaceholderGenesisModuleInit) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			initSnippet = typed.PlaceholderGenesisModuleInit + initSnippet
+			content = replacer.Replace(content, typed.PlaceholderGenesisModuleInit, initSnippet)
+
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteCodeSnippetAt(
+				path,
+				content,
+				clipper.GoSelectStartOfFunctionPosition,
+				clipper.SelectOptions{
+					"functionName": "InitGenesis",
+				},
+				initSnippet,
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Genesis export
 		templateExport := `genesis.PortId = k.GetPort(ctx)`
-		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
-			"functionName": "ExportGenesis",
-		})
-		if err != nil {
-			return err
+		if strings.Count(content, typed.PlaceholderGenesisModuleExport) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			templateExport += "\n" + typed.PlaceholderGenesisModuleExport
+			content = replacer.Replace(content, typed.PlaceholderGenesisModuleExport, templateExport)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, templateExport, clipper.SelectOptions{
+				"functionName": "ExportGenesis",
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		newFile := genny.NewFileS(path, content)
@@ -113,16 +132,24 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 
 		// Default genesis
 		templateDefault := `PortId: PortID`
-		content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
-			path,
-			content,
-			templateDefault,
-			clipper.SelectOptions{
-				"functionName": "DefaultGenesis",
-			},
-		)
-		if err != nil {
-			return err
+
+		if strings.Count(content, typed.PlaceholderGenesisTypesDefault) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			templateDefault += "\n" + typed.PlaceholderGenesisTypesDefault
+			content = replacer.Replace(content, typed.PlaceholderGenesisTypesDefault, templateDefault)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoReturningCompositeNewArgumentSnippetAt(
+				path,
+				content,
+				templateDefault,
+				clipper.SelectOptions{
+					"functionName": "DefaultGenesis",
+				},
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Validate genesis
@@ -130,11 +157,19 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 		beforeReturnSnippet := `if err := host.PortIdentifierValidator(gs.PortId); err != nil {
 		return err
 	}`
-		content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
-			"functionName": "Validate",
-		})
-		if err != nil {
-			return err
+
+		if strings.Count(content, typed.PlaceholderGenesisTypesValidate) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			beforeReturnSnippet += "\n" + typed.PlaceholderGenesisTypesValidate
+			content = replacer.Replace(content, typed.PlaceholderGenesisTypesValidate, beforeReturnSnippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, beforeReturnSnippet, clipper.SelectOptions{
+				"functionName": "Validate",
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		newFile := genny.NewFileS(path, content)
@@ -142,7 +177,7 @@ func genesisTypesModify(replacer placeholder.Replacer, opts *CreateOptions) genn
 	}
 }
 
-func genesisProtoModify(opts *CreateOptions) genny.RunFn {
+func genesisProtoModify(replacer placeholder.Replacer, opts *CreateOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "genesis.proto")
 		f, err := r.Disk.Find(path)
@@ -150,21 +185,31 @@ func genesisProtoModify(opts *CreateOptions) genny.RunFn {
 			return err
 		}
 
+		content := f.String()
+
 		// Determine the new field number
 		snippet := `  string port_id = %v;
 `
-		content, err := clipper.PasteGeneratedCodeSnippetAt(
-			path,
-			f.String(),
-			clipper.ProtoSelectNewMessageFieldPosition,
-			clipper.SelectOptions{
-				"name": "GenesisState",
-			},
-			func(data interface{}) string {
-				highestNumber := data.(clipper.ProtoNewMessageFieldPositionData).HighestFieldNumber
-				return fmt.Sprintf(snippet, highestNumber+1)
-			},
-		)
+
+		if strings.Count(content, typed.PlaceholderGenesisProtoState) != 0 {
+			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
+			snippet += typed.PlaceholderGenesisProtoState
+			content = replacer.Replace(content, typed.PlaceholderGenesisProtoState, snippet)
+		} else {
+			// And for newer codebase, we use clipper mechanism.
+			content, err = clipper.PasteGeneratedCodeSnippetAt(
+				path,
+				content,
+				clipper.ProtoSelectNewMessageFieldPosition,
+				clipper.SelectOptions{
+					"name": "GenesisState",
+				},
+				func(data interface{}) string {
+					highestNumber := data.(clipper.ProtoNewMessageFieldPositionData).HighestFieldNumber
+					return fmt.Sprintf(snippet, highestNumber+1)
+				},
+			)
+		}
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
