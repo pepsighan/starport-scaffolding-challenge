@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/clispinner"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/validation"
 	"github.com/tendermint/starport/starport/services/scaffolder"
 	modulecreate "github.com/tendermint/starport/starport/templates/module/create"
@@ -113,7 +113,7 @@ func scaffoldModuleHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	sm, err := sc.CreateModule(placeholder.New(), name, options...)
+	sm, err := sc.CreateModule(clipper.New(), name, options...)
 	s.Stop()
 	if err != nil {
 		var validationErr validation.Error

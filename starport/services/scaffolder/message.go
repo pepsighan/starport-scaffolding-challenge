@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/field/datatype"
@@ -48,7 +48,7 @@ func WithSigner(signer string) MessageOption {
 // AddMessage adds a new message to scaffolded app
 func (s Scaffolder) AddMessage(
 	ctx context.Context,
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	moduleName,
 	msgName string,
 	fields,
@@ -123,7 +123,7 @@ func (s Scaffolder) AddMessage(
 	var gens []*genny.Generator
 	gens, err = supportMsgServer(
 		gens,
-		tracer,
+		clip,
 		s.path,
 		&modulecreate.MsgServerOptions{
 			ModuleName: opts.ModuleName,
@@ -148,12 +148,12 @@ func (s Scaffolder) AddMessage(
 	}
 
 	// Scaffold
-	g, err = message.NewStargate(tracer, opts)
+	g, err = message.NewStargate(clip, opts)
 	if err != nil {
 		return sm, err
 	}
 	gens = append(gens, g)
-	sm, err = xgenny.RunWithValidation(tracer, gens...)
+	sm, err = xgenny.RunWithValidation(clip, gens...)
 	if err != nil {
 		return sm, err
 	}

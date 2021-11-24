@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/field/datatype"
@@ -52,7 +52,7 @@ func PacketWithSigner(signer string) PacketOption {
 // AddPacket adds a new type stype to scaffolded app by using optional type fields.
 func (s Scaffolder) AddPacket(
 	ctx context.Context,
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	moduleName,
 	packetName string,
 	packetFields,
@@ -133,11 +133,11 @@ func (s Scaffolder) AddPacket(
 			MsgSigner:  mfSigner,
 		}
 	)
-	g, err = ibc.NewPacket(tracer, opts)
+	g, err = ibc.NewPacket(clip, opts)
 	if err != nil {
 		return sm, err
 	}
-	sm, err = xgenny.RunWithValidation(tracer, g)
+	sm, err = xgenny.RunWithValidation(clip, g)
 	if err != nil {
 		return sm, err
 	}

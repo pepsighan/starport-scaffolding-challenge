@@ -9,10 +9,10 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gobuffalo/genny"
 	"github.com/tendermint/flutter"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/giturl"
 	"github.com/tendermint/starport/starport/pkg/gomodulepath"
 	"github.com/tendermint/starport/starport/pkg/localfs"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/templates/app"
 	modulecreate "github.com/tendermint/starport/starport/templates/module/create"
 	"github.com/tendermint/vue"
@@ -28,7 +28,7 @@ var (
 )
 
 // Init initializes a new app with name and given options.
-func Init(tracer *placeholder.Tracer, root, name, addressPrefix string, noDefaultModule bool) (path string, err error) {
+func Init(clip *clipper.Clipper, root, name, addressPrefix string, noDefaultModule bool) (path string, err error) {
 	if root, err = filepath.Abs(root); err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func Init(tracer *placeholder.Tracer, root, name, addressPrefix string, noDefaul
 	path = filepath.Join(root, pathInfo.Root)
 
 	// create the project
-	if err := generate(tracer, pathInfo, addressPrefix, path, noDefaultModule); err != nil {
+	if err := generate(clip, pathInfo, addressPrefix, path, noDefaultModule); err != nil {
 		return "", err
 	}
 
@@ -59,7 +59,7 @@ func Init(tracer *placeholder.Tracer, root, name, addressPrefix string, noDefaul
 
 //nolint:interfacer
 func generate(
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	pathInfo gomodulepath.Path,
 	addressPrefix,
 	absRoot string,
@@ -110,7 +110,7 @@ func generate(
 		if err := run(genny.WetRunner(context.Background()), g); err != nil {
 			return err
 		}
-		g = modulecreate.NewStargateAppModify(tracer, opts)
+		g = modulecreate.NewStargateAppModify(clip, opts)
 		if err := run(genny.WetRunner(context.Background()), g); err != nil {
 			return err
 		}

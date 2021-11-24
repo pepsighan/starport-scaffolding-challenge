@@ -9,7 +9,7 @@ import (
 	"github.com/gobuffalo/genny"
 	"github.com/gobuffalo/logger"
 	"github.com/gobuffalo/packd"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/validation"
 )
 
@@ -33,7 +33,7 @@ func DryRunner(ctx context.Context) *genny.Runner {
 
 // RunWithValidation checks the generators with a dry run and then execute the wet runner to the generators
 func RunWithValidation(
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	gens ...*genny.Generator,
 ) (sm SourceModification, err error) {
 	// run executes the provided runner with the provided generator
@@ -53,7 +53,7 @@ func RunWithValidation(
 			}
 			return sm, err
 		}
-		if err := tracer.Err(); err != nil {
+		if err := clip.Err(); err != nil {
 			return sm, err
 		}
 

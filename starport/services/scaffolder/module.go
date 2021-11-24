@@ -11,13 +11,13 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/cmdrunner"
 	"github.com/tendermint/starport/starport/pkg/cmdrunner/step"
 	appanalysis "github.com/tendermint/starport/starport/pkg/cosmosanalysis/app"
 	"github.com/tendermint/starport/starport/pkg/cosmosver"
 	"github.com/tendermint/starport/starport/pkg/gocmd"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/validation"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
@@ -143,7 +143,7 @@ func WithDependencies(dependencies []modulecreate.Dependency) ModuleCreationOpti
 
 // CreateModule creates a new empty module in the scaffolded app
 func (s Scaffolder) CreateModule(
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	moduleName string,
 	options ...ModuleCreationOption,
 ) (sm xgenny.SourceModification, err error) {
@@ -205,19 +205,19 @@ func (s Scaffolder) CreateModule(
 
 	// Scaffold IBC module
 	if opts.IsIBC {
-		g, err = modulecreate.NewIBC(tracer, opts)
+		g, err = modulecreate.NewIBC(clip, opts)
 		if err != nil {
 			return sm, err
 		}
 		gens = append(gens, g)
 	}
-	sm, err = xgenny.RunWithValidation(tracer, gens...)
+	sm, err = xgenny.RunWithValidation(clip, gens...)
 	if err != nil {
 		return sm, err
 	}
 
 	// Modify app.go to register the module
-	newSourceModification, runErr := xgenny.RunWithValidation(tracer, modulecreate.NewStargateAppModify(tracer, opts))
+	newSourceModification, runErr := xgenny.RunWithValidation(clip, modulecreate.NewStargateAppModify(clip, opts))
 	sm.Merge(newSourceModification)
 	var validationErr validation.Error
 	if runErr != nil && !errors.As(runErr, &validationErr) {
@@ -228,7 +228,7 @@ func (s Scaffolder) CreateModule(
 }
 
 // ImportModule imports specified module with name to the scaffolded app.
-func (s Scaffolder) ImportModule(tracer *placeholder.Tracer, name string) (sm xgenny.SourceModification, err error) {
+func (s Scaffolder) ImportModule(clip *clipper.Clipper, name string) (sm xgenny.SourceModification, err error) {
 	// Only wasm is currently supported
 	if name != "wasm" {
 		return sm, errors.New("module cannot be imported. Supported module: wasm")
@@ -243,7 +243,7 @@ func (s Scaffolder) ImportModule(tracer *placeholder.Tracer, name string) (sm xg
 	}
 
 	// run generator
-	g, err := moduleimport.NewStargate(tracer, &moduleimport.ImportOptions{
+	g, err := moduleimport.NewStargate(clip, &moduleimport.ImportOptions{
 		AppPath:          s.path,
 		Feature:          name,
 		AppName:          s.modpath.Package,
@@ -253,7 +253,7 @@ func (s Scaffolder) ImportModule(tracer *placeholder.Tracer, name string) (sm xg
 		return sm, err
 	}
 
-	sm, err = xgenny.RunWithValidation(tracer, g)
+	sm, err = xgenny.RunWithValidation(clip, g)
 	if err != nil {
 		var validationErr validation.Error
 		if errors.As(err, &validationErr) {

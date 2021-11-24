@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/genny"
+	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/cmdrunner"
 	"github.com/tendermint/starport/starport/pkg/cmdrunner/step"
 	"github.com/tendermint/starport/starport/pkg/gocmd"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/ibc"
 )
@@ -42,7 +42,7 @@ func OracleWithSigner(signer string) OracleOption {
 
 // AddOracle adds a new BandChain oracle envtest.
 func (s *Scaffolder) AddOracle(
-	tracer *placeholder.Tracer,
+	clip *clipper.Clipper,
 	moduleName,
 	queryName string,
 	options ...OracleOption,
@@ -98,11 +98,11 @@ func (s *Scaffolder) AddOracle(
 			MsgSigner:  mfSigner,
 		}
 	)
-	g, err = ibc.NewOracle(tracer, opts)
+	g, err = ibc.NewOracle(clip, opts)
 	if err != nil {
 		return sm, err
 	}
-	sm, err = xgenny.RunWithValidation(tracer, g)
+	sm, err = xgenny.RunWithValidation(clip, g)
 	if err != nil {
 		return sm, err
 	}
