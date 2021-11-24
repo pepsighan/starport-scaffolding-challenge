@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/gobuffalo/genny"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	modulecreate "github.com/tendermint/starport/starport/templates/module/create"
 )
 
@@ -61,7 +60,7 @@ func supportGenesisTests(
 // https://github.com/cosmos/cosmos-sdk/blob/master/docs/architecture/adr-031-msg-service.md
 func supportMsgServer(
 	gens []*genny.Generator,
-	replacer placeholder.Replacer,
+	clip *clipper.Clipper,
 	appPath string,
 	opts *modulecreate.MsgServerOptions,
 ) ([]*genny.Generator, error) {

@@ -7,12 +7,11 @@ import (
 
 	"github.com/gobuffalo/genny"
 	"github.com/tendermint/starport/starport/pkg/clipper"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 )
 
 // NewStargate returns the generator to scaffold a empty query in a Stargate module
-func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator, error) {
+func NewStargate(clip *clipper.Clipper, opts *Options) (*genny.Generator, error) {
 	var (
 		g        = genny.New()
 		template = xgenny.NewEmbedWalker(
@@ -22,13 +21,13 @@ func NewStargate(replacer placeholder.Replacer, opts *Options) (*genny.Generator
 		)
 	)
 
-	g.RunFn(protoQueryModify(replacer, opts))
-	g.RunFn(cliQueryModify(replacer, opts))
+	g.RunFn(protoQueryModify(clip, opts))
+	g.RunFn(cliQueryModify(clip, opts))
 
 	return g, Box(template, opts, g)
 }
 
-func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func protoQueryModify(clip *clipper.Clipper, opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -57,10 +56,10 @@ func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 		if strings.Count(content, Placeholder2) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += "\n" + Placeholder2
-			content = replacer.Replace(content, Placeholder2, serviceSnippet)
+			content = clip.Replace(content, Placeholder2, serviceSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewServiceMethodPosition,
@@ -104,7 +103,7 @@ func protoQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn 
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
+			content, err = clip.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -124,7 +123,7 @@ message Query%[1]vResponse {
 			reqFields,
 			resFields,
 		)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -140,7 +139,7 @@ message Query%[1]vResponse {
 	}
 }
 
-func cliQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
+func cliQueryModify(clip *clipper.Clipper, opts *Options) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/query.go")
 		f, err := r.Disk.Find(path)
@@ -159,10 +158,10 @@ func cliQueryModify(replacer placeholder.Replacer, opts *Options) genny.RunFn {
 		if strings.Count(content, Placeholder) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
-			content = replacer.Replace(f.String(), Placeholder, snippet)
+			content = clip.Replace(f.String(), Placeholder, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
 				"functionName": "GetQueryCmd",
 			})
 			if err != nil {

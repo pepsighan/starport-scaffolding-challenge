@@ -11,7 +11,6 @@ import (
 	"github.com/gobuffalo/plushgen"
 	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/templates/field"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
@@ -42,7 +41,7 @@ type PacketOptions struct {
 }
 
 // NewPacket returns the generator to scaffold a packet in an IBC module
-func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Generator, error) {
+func NewPacket(clip *clipper.Clipper, opts *PacketOptions) (*genny.Generator, error) {
 	var (
 		g = genny.New()
 
@@ -59,19 +58,19 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 	)
 
 	// Add the component
-	g.RunFn(moduleModify(replacer, opts))
-	g.RunFn(protoModify(replacer, opts))
-	g.RunFn(eventModify(replacer, opts))
+	g.RunFn(moduleModify(clip, opts))
+	g.RunFn(protoModify(clip, opts))
+	g.RunFn(eventModify(clip, opts))
 	if err := g.Box(componentTemplate); err != nil {
 		return g, err
 	}
 
 	// Add the send message
 	if !opts.NoMessage {
-		g.RunFn(protoTxModify(replacer, opts))
-		g.RunFn(handlerTxModify(replacer, opts))
-		g.RunFn(clientCliTxModify(replacer, opts))
-		g.RunFn(codecModify(replacer, opts))
+		g.RunFn(protoTxModify(clip, opts))
+		g.RunFn(handlerTxModify(clip, opts))
+		g.RunFn(clientCliTxModify(clip, opts))
+		g.RunFn(codecModify(clip, opts))
 		if err := g.Box(messagesTemplate); err != nil {
 			return g, err
 		}
@@ -100,7 +99,7 @@ func NewPacket(replacer placeholder.Replacer, opts *PacketOptions) (*genny.Gener
 	return g, nil
 }
 
-func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func moduleModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "module_ibc.go")
 		f, err := r.Disk.Find(path)
@@ -135,7 +134,7 @@ func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunF
 			strings.Title(opts.ModuleName),
 			opts.PacketName.UpperCamel,
 		)
-		content := replacer.Replace(f.String(), PlaceholderIBCPacketModuleRecv, replacementRecv)
+		content := clip.Replace(f.String(), PlaceholderIBCPacketModuleRecv, replacementRecv)
 
 		// Ack packet dispatch
 		templateAck := `case *types.%[2]vPacketData_%[3]vPacket:
@@ -151,7 +150,7 @@ func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunF
 			strings.Title(opts.ModuleName),
 			opts.PacketName.UpperCamel,
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketModuleAck, replacementAck)
+		content = clip.Replace(content, PlaceholderIBCPacketModuleAck, replacementAck)
 
 		// Timeout packet dispatch
 		templateTimeout := `case *types.%[2]vPacketData_%[3]vPacket:
@@ -166,14 +165,14 @@ func moduleModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunF
 			strings.Title(opts.ModuleName),
 			opts.PacketName.UpperCamel,
 		)
-		content = replacer.Replace(content, PlaceholderIBCPacketModuleTimeout, replacementTimeout)
+		content = clip.Replace(content, PlaceholderIBCPacketModuleTimeout, replacementTimeout)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "packet.proto")
 		f, err := r.Disk.Find(path)
@@ -197,10 +196,10 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 			)
 			replacementField = PlaceholderIBCPacketProtoField + "\n\t" +
 				strings.TrimSpace(replacementField) + " " + PlaceholderIBCPacketProtoFieldNumber
-			content = replacer.Replace(content, PlaceholderIBCPacketProtoField, replacementField)
+			content = clip.Replace(content, PlaceholderIBCPacketProtoField, replacementField)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGeneratedCodeSnippetAt(
+			content, err = clip.PasteGeneratedCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewOneOfFieldPosition,
@@ -247,7 +246,7 @@ func protoModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
+			content, err = clip.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -268,7 +267,7 @@ message %[1]vPacketAck {
 			packetFields,
 			ackFields,
 		)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -284,7 +283,7 @@ message %[1]vPacketAck {
 	}
 }
 
-func eventModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func eventModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "types/events_ibc.go")
 		f, err := r.Disk.Find(path)
@@ -299,7 +298,7 @@ const EventType%[1]vPacket = "%[2]v_packet"`
 			opts.PacketName.UpperCamel,
 			opts.PacketName.LowerCamel,
 		)
-		content, err := clipper.PasteCodeSnippetAt(path, f.String(), clipper.GoSelectNewGlobalPosition, nil, snippet)
+		content, err := clip.PasteCodeSnippetAt(path, f.String(), clipper.GoSelectNewGlobalPosition, nil, snippet)
 		if err != nil {
 			return err
 		}
@@ -309,7 +308,7 @@ const EventType%[1]vPacket = "%[2]v_packet"`
 	}
 }
 
-func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func protoTxModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -330,10 +329,10 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 		if strings.Count(content, PlaceholderProtoTxRPC) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += PlaceholderProtoTxRPC
-			content = replacer.Replace(content, PlaceholderProtoTxRPC, serviceSnippet)
+			content = clip.Replace(content, PlaceholderProtoTxRPC, serviceSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewServiceMethodPosition,
@@ -363,7 +362,7 @@ func protoTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.Run
 import "%[1]v";`, f)
 			content = strings.ReplaceAll(content, importModule, "")
 
-			content, err = clipper.PasteProtoImportSnippetAt(path, content, importModule)
+			content, err = clip.PasteProtoImportSnippetAt(path, content, importModule)
 			if err != nil {
 				return err
 			}
@@ -391,7 +390,7 @@ message MsgSend%[1]vResponse {
 			opts.MsgSigner.LowerCamel,
 			sendFields,
 		)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -407,7 +406,7 @@ message MsgSend%[1]vResponse {
 	}
 }
 
-func handlerTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func handlerTxModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "handler.go")
 		f, err := r.Disk.Find(path)
@@ -417,7 +416,7 @@ func handlerTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.R
 
 		// Set once the MsgServer definition if it is not defined yet
 		replacementMsgServer := `msgServer := keeper.NewMsgServerImpl(k)`
-		content := replacer.ReplaceOnce(f.String(), PlaceholderHandlerMsgServer, replacementMsgServer)
+		content := clip.ReplaceOnce(f.String(), PlaceholderHandlerMsgServer, replacementMsgServer)
 
 		templateHandlers := `case *types.MsgSend%[2]v:
 					res, err := msgServer.Send%[2]v(sdk.WrapSDKContext(ctx), msg)
@@ -427,13 +426,13 @@ func handlerTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.R
 			Placeholder,
 			opts.PacketName.UpperCamel,
 		)
-		content = replacer.Replace(content, Placeholder, replacementHandlers)
+		content = clip.Replace(content, Placeholder, replacementHandlers)
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func clientCliTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func clientCliTxModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
@@ -449,10 +448,10 @@ func clientCliTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny
 		if strings.Count(content, Placeholder) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
-			content = replacer.Replace(f.String(), Placeholder, snippet)
+			content = clip.Replace(f.String(), Placeholder, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, f.String(), snippet, clipper.SelectOptions{
 				"functionName": "GetTxCmd",
 			})
 			if err != nil {
@@ -465,7 +464,7 @@ func clientCliTxModify(replacer placeholder.Replacer, opts *PacketOptions) genny
 	}
 }
 
-func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn {
+func codecModify(clip *clipper.Clipper, opts *PacketOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "types/codec.go")
 		f, err := r.Disk.Find(path)
@@ -475,7 +474,7 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 
 		// Set import if not set yet
 		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		content, err := clip.PasteGoImportSnippetAt(path, f.String(), importSnippet)
 		if err != nil {
 			return err
 		}
@@ -492,10 +491,10 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		if strings.Count(content, module.Placeholder2) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + module.Placeholder2
-			content = replacer.Replace(content, module.Placeholder2, startOfFunctionSnippet)
+			content = clip.Replace(content, module.Placeholder2, startOfFunctionSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStartOfFunctionPosition,
@@ -519,10 +518,10 @@ func codecModify(replacer placeholder.Replacer, opts *PacketOptions) genny.RunFn
 		if strings.Count(content, module.Placeholder3) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + module.Placeholder3
-			content = replacer.Replace(content, module.Placeholder3, startOfFunctionSnippet)
+			content = clip.Replace(content, module.Placeholder3, startOfFunctionSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStartOfFunctionPosition,

@@ -11,7 +11,6 @@ import (
 	"github.com/gobuffalo/plushgen"
 	"github.com/tendermint/starport/starport/pkg/clipper"
 	"github.com/tendermint/starport/starport/pkg/multiformatname"
-	"github.com/tendermint/starport/starport/pkg/placeholder"
 	"github.com/tendermint/starport/starport/pkg/xgenny"
 	"github.com/tendermint/starport/starport/pkg/xstrings"
 	"github.com/tendermint/starport/starport/templates/field/plushhelpers"
@@ -35,18 +34,18 @@ type OracleOptions struct {
 }
 
 // NewOracle returns the generator to scaffold the implementation of the Oracle interface inside a module
-func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Generator, error) {
+func NewOracle(clip *clipper.Clipper, opts *OracleOptions) (*genny.Generator, error) {
 	g := genny.New()
 
 	template := xgenny.NewEmbedWalker(fsOracle, "oracle/", opts.AppPath)
 
-	g.RunFn(moduleOracleModify(replacer, opts))
-	g.RunFn(protoQueryOracleModify(replacer, opts))
-	g.RunFn(protoTxOracleModify(replacer, opts))
-	g.RunFn(handlerTxOracleModify(replacer, opts))
-	g.RunFn(clientCliQueryOracleModify(replacer, opts))
-	g.RunFn(clientCliTxOracleModify(replacer, opts))
-	g.RunFn(codecOracleModify(replacer, opts))
+	g.RunFn(moduleOracleModify(clip, opts))
+	g.RunFn(protoQueryOracleModify(clip, opts))
+	g.RunFn(protoTxOracleModify(clip, opts))
+	g.RunFn(handlerTxOracleModify(clip, opts))
+	g.RunFn(clientCliQueryOracleModify(clip, opts))
+	g.RunFn(clientCliTxOracleModify(clip, opts))
+	g.RunFn(codecOracleModify(clip, opts))
 
 	ctx := plush.NewContext()
 	ctx.Set("moduleName", opts.ModuleName)
@@ -73,12 +72,12 @@ func NewOracle(replacer placeholder.Replacer, opts *OracleOptions) (*genny.Gener
 		return g, err
 	}
 
-	g.RunFn(packetHandlerOracleModify(replacer, opts))
+	g.RunFn(packetHandlerOracleModify(clip, opts))
 
 	return g, nil
 }
 
-func moduleOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func moduleOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "module_ibc.go")
 		f, err := r.Disk.Find(path)
@@ -95,7 +94,7 @@ func moduleOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genn
 	}
 	%[1]v`
 		replacementRecv := fmt.Sprintf(templateRecv, PlaceholderOraclePacketModuleRecv)
-		content := replacer.ReplaceOnce(f.String(), PlaceholderOraclePacketModuleRecv, replacementRecv)
+		content := clip.ReplaceOnce(f.String(), PlaceholderOraclePacketModuleRecv, replacementRecv)
 
 		// Ack packet dispatch
 		templateAck := `sdkResult, err := am.handleOracleAcknowledgment(ctx, ack, modulePacket)
@@ -108,14 +107,14 @@ func moduleOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genn
 	}
 	%[1]v`
 		replacementAck := fmt.Sprintf(templateAck, PlaceholderOraclePacketModuleAck)
-		content = replacer.ReplaceOnce(content, PlaceholderOraclePacketModuleAck, replacementAck)
+		content = clip.ReplaceOnce(content, PlaceholderOraclePacketModuleAck, replacementAck)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoQueryOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "query.proto")
 		f, err := r.Disk.Find(path)
@@ -127,7 +126,7 @@ func protoQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) 
 		templateImport := `
 import "%[1]v/%[2]v.proto";`
 		importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-		content, err := clipper.PasteProtoImportSnippetAt(path, f.String(), importString)
+		content, err := clip.PasteProtoImportSnippetAt(path, f.String(), importString)
 		if err != nil {
 			return err
 		}
@@ -154,10 +153,10 @@ import "%[1]v/%[2]v.proto";`
 		if strings.Count(content, Placeholder2) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += Placeholder2
-			content = replacer.Replace(content, Placeholder2, serviceSnippet)
+			content = clip.Replace(content, Placeholder2, serviceSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewServiceMethodPosition,
@@ -181,7 +180,7 @@ message QueryLast%[1]vIdRequest {}
 
 message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
 		messagesSnippet := fmt.Sprintf(templateMessage, opts.QueryName.UpperCamel)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -197,7 +196,7 @@ message QueryLast%[1]vIdResponse {int64 request_id = 1;}`
 	}
 }
 
-func protoTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func protoTxOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "proto", opts.ModuleName, "tx.proto")
 		f, err := r.Disk.Find(path)
@@ -216,7 +215,7 @@ import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "%[1]v/%[2]v.proto";`
 		importString := fmt.Sprintf(templateImport, opts.ModuleName, opts.QueryName.Snake)
-		content, err = clipper.PasteProtoImportSnippetAt(path, content, importString)
+		content, err = clip.PasteProtoImportSnippetAt(path, content, importString)
 		if err != nil {
 			return err
 		}
@@ -229,10 +228,10 @@ import "%[1]v/%[2]v.proto";`
 		if strings.Count(content, PlaceholderProtoTxRPC) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			serviceSnippet += PlaceholderProtoTxRPC
-			content = replacer.Replace(content, PlaceholderProtoTxRPC, serviceSnippet)
+			content = clip.Replace(content, PlaceholderProtoTxRPC, serviceSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.ProtoSelectNewServiceMethodPosition,
@@ -273,7 +272,7 @@ message Msg%[1]vDataResponse {
 			opts.QueryName.UpperCamel,
 			opts.MsgSigner.LowerCamel,
 		)
-		content, err = clipper.PasteCodeSnippetAt(
+		content, err = clip.PasteCodeSnippetAt(
 			path,
 			content,
 			clipper.ProtoSelectLastPosition,
@@ -289,7 +288,7 @@ message Msg%[1]vDataResponse {
 	}
 }
 
-func handlerTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func handlerTxOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "handler.go")
 		f, err := r.Disk.Find(path)
@@ -299,20 +298,20 @@ func handlerTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) g
 
 		// Set once the MsgServer definition if it is not defined yet
 		replacementMsgServer := `msgServer := keeper.NewMsgServerImpl(k)`
-		content := replacer.ReplaceOnce(f.String(), PlaceholderHandlerMsgServer, replacementMsgServer)
+		content := clip.ReplaceOnce(f.String(), PlaceholderHandlerMsgServer, replacementMsgServer)
 
 		templateHandlers := `case *types.Msg%[2]vData:
 					res, err := msgServer.%[2]vData(sdk.WrapSDKContext(ctx), msg)
 					return sdk.WrapServiceResult(ctx, res, err)
 %[1]v`
 		replacementHandlers := fmt.Sprintf(templateHandlers, Placeholder, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, Placeholder, replacementHandlers)
+		content = clip.Replace(content, Placeholder, replacementHandlers)
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
 	}
 }
 
-func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func clientCliQueryOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/query.go")
 		f, err := r.Disk.Find(path)
@@ -327,11 +326,11 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 		if strings.Count(content, Placeholder) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
-			content = replacer.Replace(f.String(), Placeholder, snippet)
+			content = clip.Replace(f.String(), Placeholder, snippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
 			var err error
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
 				"functionName": "GetQueryCmd",
 			})
 			if err != nil {
@@ -344,7 +343,7 @@ func clientCliQueryOracleModify(replacer placeholder.Replacer, opts *OracleOptio
 	}
 }
 
-func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func clientCliTxOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "client/cli/tx.go")
 		f, err := r.Disk.Find(path)
@@ -358,9 +357,9 @@ func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions)
 		if strings.Count(content, Placeholder) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			snippet += "\n" + Placeholder
-			content = replacer.Replace(f.String(), Placeholder, snippet)
+			content = clip.Replace(f.String(), Placeholder, snippet)
 		} else {
-			content, err = clipper.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
+			content, err = clip.PasteGoBeforeReturnSnippetAt(path, content, snippet, clipper.SelectOptions{
 				"functionName": "GetTxCmd",
 			})
 			if err != nil {
@@ -373,7 +372,7 @@ func clientCliTxOracleModify(replacer placeholder.Replacer, opts *OracleOptions)
 	}
 }
 
-func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func codecOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "types/codec.go")
 		f, err := r.Disk.Find(path)
@@ -383,7 +382,7 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 
 		// Set import if not set yet
 		importSnippet := `sdk "github.com/cosmos/cosmos-sdk/types"`
-		content, err := clipper.PasteGoImportSnippetAt(path, f.String(), importSnippet)
+		content, err := clip.PasteGoImportSnippetAt(path, f.String(), importSnippet)
 		if err != nil {
 			return err
 		}
@@ -396,10 +395,10 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		if strings.Count(content, Placeholder2) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + Placeholder2
-			content = replacer.Replace(content, Placeholder2, startOfFunctionSnippet)
+			content = clip.Replace(content, Placeholder2, startOfFunctionSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStartOfFunctionPosition,
@@ -423,10 +422,10 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 		if strings.Count(content, Placeholder3) != 0 {
 			// To make code generation backwards compatible, we use placeholder mechanism if the code already uses it.
 			startOfFunctionSnippet += "\n" + Placeholder3
-			content = replacer.Replace(content, Placeholder3, startOfFunctionSnippet)
+			content = clip.Replace(content, Placeholder3, startOfFunctionSnippet)
 		} else {
 			// And for newer codebase, we use clipper mechanism.
-			content, err = clipper.PasteCodeSnippetAt(
+			content, err = clip.PasteCodeSnippetAt(
 				path,
 				content,
 				clipper.GoSelectStartOfFunctionPosition,
@@ -444,7 +443,7 @@ func codecOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny
 	}
 }
 
-func packetHandlerOracleModify(replacer placeholder.Replacer, opts *OracleOptions) genny.RunFn {
+func packetHandlerOracleModify(clip *clipper.Clipper, opts *OracleOptions) genny.RunFn {
 	return func(r *genny.Runner) error {
 		path := filepath.Join(opts.AppPath, "x", opts.ModuleName, "oracle.go")
 		f, err := r.Disk.Find(path)
@@ -467,7 +466,7 @@ func packetHandlerOracleModify(replacer placeholder.Replacer, opts *OracleOption
 %[1]v`
 		replacementRegistry := fmt.Sprintf(templateRecv, PlaceholderOracleModuleRecv,
 			opts.QueryName.LowerCamel, opts.QueryName.UpperCamel)
-		content := replacer.Replace(f.String(), PlaceholderOracleModuleRecv, replacementRegistry)
+		content := clip.Replace(f.String(), PlaceholderOracleModuleRecv, replacementRegistry)
 
 		// Register the module packet interface
 		templateAck := `
@@ -482,7 +481,7 @@ func packetHandlerOracleModify(replacer placeholder.Replacer, opts *OracleOption
 %[1]v`
 		replacementInterface := fmt.Sprintf(templateAck, PlaceholderOracleModuleAck,
 			opts.QueryName.LowerCamel, opts.QueryName.UpperCamel)
-		content = replacer.Replace(content, PlaceholderOracleModuleAck, replacementInterface)
+		content = clip.Replace(content, PlaceholderOracleModuleAck, replacementInterface)
 
 		newFile := genny.NewFileS(path, content)
 		return r.File(newFile)
