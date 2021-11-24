@@ -8,7 +8,7 @@ func main() {}
 `
 
 func TestGoSelectNewImportPositionAfterNoImports(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", noImportGoFile, nil)
+	result, err := GoSelectNewImportPosition.call("test.go", noImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func main() {}
 `
 
 func TestGoSelectNewImportPositionAfterImports(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", oneImportGoFile, nil)
+	result, err := GoSelectNewImportPosition.call("test.go", oneImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func main() {}
 `
 
 func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
-	result, err := GoSelectNewImportPosition("test.go", groupImportGoFile, nil)
+	result, err := GoSelectNewImportPosition.call("test.go", groupImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestGoSelectNewImportPositionAfterImportsGroup(t *testing.T) {
 }
 
 func TestGoSelectNewGlobalPositionAfterNoImports(t *testing.T) {
-	result, err := GoSelectNewGlobalPosition("test.go", noImportGoFile, nil)
+	result, err := GoSelectNewGlobalPosition.call("test.go", noImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestGoSelectNewGlobalPositionAfterNoImports(t *testing.T) {
 }
 
 func TestGoSelectNewGlobalPositionAfterImports(t *testing.T) {
-	result, err := GoSelectNewGlobalPosition("test.go", groupImportGoFile, nil)
+	result, err := GoSelectNewGlobalPosition.call("test.go", groupImportGoFile, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func withReturn() int {
 `
 
 func TestGoSelectBeforeFunctionReturnsPositionWithReturn(t *testing.T) {
-	result, err := GoSelectBeforeFunctionReturnsPosition("test.go", withReturnGoFile, SelectOptions{
+	result, err := GoSelectBeforeFunctionReturnsPosition.call("test.go", withReturnGoFile, SelectOptions{
 		"functionName": "withReturn",
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func withNoReturn() int {
 `
 
 func TestGoSelectBeforeFunctionReturnsPositionWithNoReturn(t *testing.T) {
-	result, err := GoSelectBeforeFunctionReturnsPosition("test.go", noReturnGoFile, SelectOptions{
+	result, err := GoSelectBeforeFunctionReturnsPosition.call("test.go", noReturnGoFile, SelectOptions{
 		"functionName": "withNoReturn",
 	})
 	if err != nil {
@@ -138,7 +138,7 @@ func TestGoSelectBeforeFunctionReturnsPositionWithNoReturn(t *testing.T) {
 }
 
 func TestGoSelectStartOfFunctionPosition(t *testing.T) {
-	result, err := GoSelectStartOfFunctionPosition("test.go", noImportGoFile, SelectOptions{
+	result, err := GoSelectStartOfFunctionPosition.call("test.go", noImportGoFile, SelectOptions{
 		"functionName": "main",
 	})
 	if err != nil {
@@ -158,9 +158,13 @@ func returnsValue() int {
 `
 
 func TestGoSelectReturningFunctionCallPositionInSingleLine(t *testing.T) {
-	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnSingleLineFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition.call(
+		"test.go",
+		functionCallReturnSingleLineFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,9 +189,13 @@ func returnsValue() int {
 `
 
 func TestGoSelectReturningFunctionCallPositionInMultiLine(t *testing.T) {
-	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnMultiLineFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition.call(
+		"test.go",
+		functionCallReturnMultiLineFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,9 +217,13 @@ func returnsValue() int {
 `
 
 func TestGoSelectReturningFunctionCallPositionWhenNoArguments(t *testing.T) {
-	result, err := GoSelectReturningFunctionCallNewArgumentPosition("test.go", functionCallReturnNoArgumentsFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningFunctionCallNewArgumentPosition.call(
+		"test.go",
+		functionCallReturnNoArgumentsFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,20 +239,24 @@ func TestGoSelectReturningFunctionCallPositionWhenNoArguments(t *testing.T) {
 
 const structReturnSingleLineFile = `package test
 
-type Call struct {
+type call struct {
 	FieldA int
 	FieldB int
 }
 
-func returnsValue() Call {
-	return Call{ FieldA: 5, FieldB: 6 }
+func returnsValue() call {
+	return call{ FieldA: 5, FieldB: 6 }
 }
 `
 
 func TestGoSelectReturningStructNewArgumentPositionInSingleLine(t *testing.T) {
-	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnSingleLineFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningCompositeNewArgumentPosition.call(
+		"test.go",
+		structReturnSingleLineFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,13 +272,13 @@ func TestGoSelectReturningStructNewArgumentPositionInSingleLine(t *testing.T) {
 
 const structReturnMultiLineFile = `package test
 
-type Call struct {
+type call struct {
 	FieldA int
 	FieldB int
 }
 
-func returnsValue() *Call {
-	return &Call{
+func returnsValue() *call {
+	return &call{
 		FieldA: 5,
 		FieldB: 6,
 	}
@@ -270,9 +286,13 @@ func returnsValue() *Call {
 `
 
 func TestGoSelectReturningStructNewArgumentPositionInMultiLine(t *testing.T) {
-	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnMultiLineFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningCompositeNewArgumentPosition.call(
+		"test.go",
+		structReturnMultiLineFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,20 +308,24 @@ func TestGoSelectReturningStructNewArgumentPositionInMultiLine(t *testing.T) {
 
 const structReturnNoArgumentsFile = `package test
 
-type Call struct {
+type call struct {
 	FieldA int
 	FieldB int
 }
 
-func returnsValue() Call {
-	return Call{}
+func returnsValue() call {
+	return call{}
 }
 `
 
 func TestGoSelectReturningStructNewArgumentPositionWhenNoArgs(t *testing.T) {
-	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", structReturnNoArgumentsFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningCompositeNewArgumentPosition.call(
+		"test.go",
+		structReturnNoArgumentsFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,9 +350,13 @@ func returnsValue() map[string]string {
 `
 
 func TestGoSelectReturningMapNewArgumentPositionInMultiLine(t *testing.T) {
-	result, err := GoSelectReturningCompositeNewArgumentPosition("test.go", mapReturnMultiLineFile, SelectOptions{
-		"functionName": "returnsValue",
-	})
+	result, err := GoSelectReturningCompositeNewArgumentPosition.call(
+		"test.go",
+		mapReturnMultiLineFile,
+		SelectOptions{
+			"functionName": "returnsValue",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,9 +371,13 @@ func TestGoSelectReturningMapNewArgumentPositionInMultiLine(t *testing.T) {
 }
 
 func TestGoSelectStructNewFieldPosition(t *testing.T) {
-	result, err := GoSelectStructNewFieldPosition("test.go", structReturnNoArgumentsFile, SelectOptions{
-		"structName": "Call",
-	})
+	result, err := GoSelectStructNewFieldPosition.call(
+		"test.go",
+		structReturnNoArgumentsFile,
+		SelectOptions{
+			"structName": "call",
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

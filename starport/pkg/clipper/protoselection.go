@@ -166,19 +166,25 @@ var ProtoSelectNewOneOfFieldPosition = wrapProtoFinder(
 )
 
 // ProtoSelectLastPosition selects the last position within the code.
-func ProtoSelectLastPosition(path, code string, _ SelectOptions) (*PositionSelectorResult, error) {
-	parsedAST, err := parseProto(path, code)
-	if err != nil {
-		return nil, err
-	}
+var ProtoSelectLastPosition = &PositionSelector{
+	id: func() int {
+		positionSelectorID += 1
+		return positionSelectorID
+	}(),
+	call: func(path, code string, options SelectOptions) (*PositionSelectorResult, error) {
+		parsedAST, err := parseProto(path, code)
+		if err != nil {
+			return nil, err
+		}
 
-	offsetMap, err := lineOffsetMapOfFile(code)
-	if err != nil {
-		return nil, err
-	}
+		offsetMap, err := lineOffsetMapOfFile(code)
+		if err != nil {
+			return nil, err
+		}
 
-	result := PositionSelectorResult{
-		OffsetPosition: offsetForProtoSourcePos(offsetMap, parsedAST.End()),
-	}
-	return &result, nil
+		result := PositionSelectorResult{
+			OffsetPosition: offsetForProtoSourcePos(offsetMap, parsedAST.End()),
+		}
+		return &result, nil
+	},
 }
