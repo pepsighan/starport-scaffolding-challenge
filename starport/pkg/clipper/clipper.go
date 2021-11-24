@@ -2,22 +2,34 @@ package clipper
 
 import (
 	"fmt"
+
+	"github.com/tendermint/starport/starport/pkg/placeholder"
 )
 
 // SnippetGenerator generates a snippet to be pasted based on the given data.
 type SnippetGenerator func(data interface{}) string
 
+// Clipper can paste new generated code in place by performing code analysis via selectors. It can also for backwards
+// compatibilities sake can perform replacements of new code using placeholders.
+type Clipper struct {
+	placeholder.Tracer
+	// Missing clipper selections that is needed for the clipper to work.
+	missingSelections []string
+}
+
 // PasteCodeSnippetAt pastes a code snippet at the location pointed by the selector and returns a new code. The path
 // is only used for context in errors.
-func PasteCodeSnippetAt(path, code string, selector PositionSelector, options SelectOptions, snippet string) (string, error) {
-	return PasteGeneratedCodeSnippetAt(path, code, selector, options, func(_ interface{}) string {
+func (c *Clipper) PasteCodeSnippetAt(
+	path, code string, selector PositionSelector, options SelectOptions, snippet string,
+) (string, error) {
+	return c.PasteGeneratedCodeSnippetAt(path, code, selector, options, func(_ interface{}) string {
 		return snippet
 	})
 }
 
 // PasteGeneratedCodeSnippetAt pastes a generated code snippet at the location pointed by the selector and returns
 // a new code. The path is only used for context in errors.
-func PasteGeneratedCodeSnippetAt(
+func (c *Clipper) PasteGeneratedCodeSnippetAt(
 	path, code string, selector PositionSelector, options SelectOptions, generator SnippetGenerator,
 ) (string, error) {
 	result, err := selector(path, code, options)
@@ -37,8 +49,8 @@ func PasteGeneratedCodeSnippetAt(
 
 // PasteProtoImportSnippetAt pastes an import snippet at the start of the file while making sure that there
 // is an empty space between package declaration and import. The path is only used for context in errors.
-func PasteProtoImportSnippetAt(path, code string, snippet string) (string, error) {
-	return PasteGeneratedCodeSnippetAt(
+func (c *Clipper) PasteProtoImportSnippetAt(path, code string, snippet string) (string, error) {
+	return c.PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		ProtoSelectNewImportPosition,
@@ -55,8 +67,10 @@ func PasteProtoImportSnippetAt(path, code string, snippet string) (string, error
 
 // PasteGoBeforeReturnSnippetAt pastes a Golang snippet right before a function returns at the end of the function
 // block.
-func PasteGoBeforeReturnSnippetAt(path, code string, snippet string, options SelectOptions) (string, error) {
-	return PasteGeneratedCodeSnippetAt(
+func (c *Clipper) PasteGoBeforeReturnSnippetAt(
+	path, code string, snippet string, options SelectOptions,
+) (string, error) {
+	return c.PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		GoSelectBeforeFunctionReturnsPosition,
@@ -72,8 +86,8 @@ func PasteGoBeforeReturnSnippetAt(path, code string, snippet string, options Sel
 }
 
 // PasteGoImportSnippetAt pastes a Golang import snippet at the import site.
-func PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
-	return PasteGeneratedCodeSnippetAt(
+func (c *Clipper) PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
+	return c.PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		GoSelectNewImportPosition,
@@ -89,10 +103,10 @@ func PasteGoImportSnippetAt(path, code string, snippet string) (string, error) {
 }
 
 // PasteGoReturningFunctionNewArgumentSnippetAt pastes argument for a returning function in a function.
-func PasteGoReturningFunctionNewArgumentSnippetAt(
+func (c *Clipper) PasteGoReturningFunctionNewArgumentSnippetAt(
 	path, code string, snippet string, options SelectOptions,
 ) (string, error) {
-	return PasteGeneratedCodeSnippetAt(
+	return c.PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		GoSelectReturningFunctionCallNewArgumentPosition,
@@ -108,10 +122,10 @@ func PasteGoReturningFunctionNewArgumentSnippetAt(
 }
 
 // PasteGoReturningCompositeNewArgumentSnippetAt pastes argument for a returning struct in a function.
-func PasteGoReturningCompositeNewArgumentSnippetAt(
+func (c *Clipper) PasteGoReturningCompositeNewArgumentSnippetAt(
 	path, code string, snippet string, options SelectOptions,
 ) (string, error) {
-	return PasteGeneratedCodeSnippetAt(
+	return c.PasteGeneratedCodeSnippetAt(
 		path,
 		code,
 		GoSelectReturningCompositeNewArgumentPosition,
