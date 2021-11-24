@@ -5,7 +5,7 @@ import (
 )
 
 func TestAddingProtoImport(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.proto",
 		genesisProtoFile,
 		ProtoSelectNewImportPosition,
@@ -34,7 +34,7 @@ message GenesisState {
 }
 
 func TestAddingImportAfterImports(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.proto",
 		queryProtoFile,
 		ProtoSelectNewImportPosition,
@@ -66,7 +66,7 @@ service Query {
 }
 
 func TestAddingMessageField(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.proto",
 		genesisProtoFile,
 		ProtoSelectNewMessageFieldPosition,
@@ -97,7 +97,7 @@ message GenesisState {
 }
 
 func TestAddingServiceMethod(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.proto",
 		queryProtoFile,
 		ProtoSelectNewServiceMethodPosition,
@@ -131,7 +131,7 @@ service Query {
 }
 
 func TestAddingOneOfField(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.proto",
 		packetProtoFile,
 		ProtoSelectNewOneOfFieldPosition,
@@ -168,7 +168,7 @@ message NoData {
 }
 
 func TestAddingNewImportAfterPackage(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		noImportGoFile,
 		GoSelectNewImportPosition,
@@ -191,7 +191,7 @@ func main() {}
 }
 
 func TestAddingNewImportAfterImportsGroup(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		groupImportGoFile,
 		GoSelectNewImportPosition,
@@ -220,7 +220,7 @@ func main() {}
 }
 
 func TestAddingConstDeclarationGlobally(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		noImportGoFile,
 		GoSelectNewGlobalPosition,
@@ -244,7 +244,7 @@ func main() {}
 }
 
 func TestAddingConstDeclarationGloballyAfterImports(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		groupImportGoFile,
 		GoSelectNewGlobalPosition,
@@ -274,7 +274,7 @@ func main() {}
 }
 
 func TestAddingBeforeExplicitReturnInFunction(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		withReturnGoFile,
 		GoSelectBeforeFunctionReturnsPosition,
@@ -302,7 +302,7 @@ func withReturn() int {
 }
 
 func TestAddingBeforeFunctionEnds(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		noReturnGoFile,
 		GoSelectBeforeFunctionReturnsPosition,
@@ -330,7 +330,7 @@ func withNoReturn() int {
 }
 
 func TestAddingFirstInTheFunction(t *testing.T) {
-	generated, err := PasteCodeSnippetAt(
+	generated, err := New().PasteCodeSnippetAt(
 		"test.go",
 		noReturnGoFile,
 		GoSelectStartOfFunctionPosition,

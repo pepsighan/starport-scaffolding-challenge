@@ -17,6 +17,11 @@ type Clipper struct {
 	missingSelections []string
 }
 
+// New creates a new clipper.
+func New() *Clipper {
+	return &Clipper{}
+}
+
 // PasteCodeSnippetAt pastes a code snippet at the location pointed by the selector and returns a new code. The path
 // is only used for context in errors.
 func (c *Clipper) PasteCodeSnippetAt(
