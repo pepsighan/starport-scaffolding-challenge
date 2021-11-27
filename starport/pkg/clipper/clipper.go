@@ -12,7 +12,7 @@ type SnippetGenerator func(data interface{}) string
 // Clipper can paste new generated code in place by performing code analysis via selectors. It can also for backwards
 // compatibilities sake can perform replacements of new code using placeholders.
 type Clipper struct {
-	placeholder.Tracer
+	*placeholder.Tracer
 	// Missing clipper selections that is needed for the clipper to work.
 	missingSelections       []int
 	missingSelectionOptions []SelectOptions
@@ -20,7 +20,7 @@ type Clipper struct {
 
 // New creates a new clipper.
 func New() *Clipper {
-	return &Clipper{}
+	return &Clipper{Tracer: placeholder.New()}
 }
 
 // Err if any selections or placeholders were missing during execution.
