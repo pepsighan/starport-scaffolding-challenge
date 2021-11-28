@@ -21,12 +21,14 @@ type GoBeforeFunctionReturnsPositionData struct {
 // GoReturningFunctionCallNewArgumentPositionData stores data collected during a selection of the position for
 // a new argument in a function call which is being returned.
 type GoReturningFunctionCallNewArgumentPositionData struct {
+	HasArguments     bool
 	HasTrailingComma bool
 }
 
 // GoReturningCompositeNewArgumentPositionData stores data collected during a selection of the position for
 // a new argument in a struct which is being returned.
 type GoReturningCompositeNewArgumentPositionData struct {
+	HasArguments     bool
 	HasTrailingComma bool
 }
 
@@ -187,17 +189,19 @@ var GoSelectReturningFunctionCallNewArgumentPosition = wrapGoFinder(
 
 					if r, ok := ret.(*ast.CallExpr); ok {
 						result.OffsetPosition = OffsetPosition(r.Rparen)
-						result.Data = GoReturningFunctionCallNewArgumentPositionData{}
+						data := GoReturningFunctionCallNewArgumentPositionData{
+							HasArguments: len(r.Args) != 0,
+						}
 
 						// Check if the closing parenthesis is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rparen-1]))
 
 						// TODO: This won't work if there is a comment after the comma.
 						if leftPart[len(leftPart)-1] == ',' {
-							result.Data = GoReturningFunctionCallNewArgumentPositionData{
-								HasTrailingComma: true,
-							}
+							data.HasTrailingComma = true
 						}
+
+						result.Data = data
 					}
 				}
 			}
@@ -227,17 +231,19 @@ var GoSelectReturningCompositeNewArgumentPosition = wrapGoFinder(
 
 					if r, ok := ret.(*ast.CompositeLit); ok {
 						result.OffsetPosition = OffsetPosition(r.Rbrace)
-						result.Data = GoReturningCompositeNewArgumentPositionData{}
+						data := GoReturningCompositeNewArgumentPositionData{
+							HasArguments: len(r.Elts) != 0,
+						}
 
 						// Check if the closing brace is preceded by a comma.
 						leftPart := []rune(strings.TrimSpace(code[:r.Rbrace-1]))
 
 						// TODO: This won't work if there is a comment after the comma.
 						if leftPart[len(leftPart)-1] == ',' {
-							result.Data = GoReturningCompositeNewArgumentPositionData{
-								HasTrailingComma: true,
-							}
+							data.HasTrailingComma = true
 						}
+
+						result.Data = data
 					}
 				}
 			}

@@ -191,8 +191,11 @@ func (c *Clipper) PasteGoReturningFunctionNewArgumentSnippetAt(
 		GoSelectReturningFunctionCallNewArgumentPosition,
 		options,
 		func(data interface{}) string {
-			hasTrailingComma := data.(GoReturningFunctionCallNewArgumentPositionData).HasTrailingComma
-			if hasTrailingComma {
+			d := data.(GoReturningFunctionCallNewArgumentPositionData)
+			if !d.HasArguments {
+				return fmt.Sprintf("%v,", snippet)
+			}
+			if d.HasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
 			return fmt.Sprintf(", %v,", snippet)
@@ -210,8 +213,11 @@ func (c *Clipper) PasteGoReturningCompositeNewArgumentSnippetAt(
 		GoSelectReturningCompositeNewArgumentPosition,
 		options,
 		func(data interface{}) string {
-			hasTrailingComma := data.(GoReturningCompositeNewArgumentPositionData).HasTrailingComma
-			if hasTrailingComma {
+			d := data.(GoReturningCompositeNewArgumentPositionData)
+			if !d.HasArguments {
+				return fmt.Sprintf("%v,", snippet)
+			}
+			if d.HasTrailingComma {
 				return fmt.Sprintf("\t%v,\n\t", snippet)
 			}
 			return fmt.Sprintf(", %v,", snippet)
