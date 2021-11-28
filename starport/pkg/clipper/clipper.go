@@ -118,6 +118,8 @@ func (c *Clipper) PasteGeneratedCodeSnippetAt(
 
 	if result.OffsetPosition == NoOffsetPosition {
 		// Do nothing and return the code as is. The errors are accumulated by the clipper.
+		c.missingSelections = append(c.missingSelections, selector.id)
+		c.missingSelectionOptions = append(c.missingSelectionOptions, options)
 		return code, nil
 	}
 
