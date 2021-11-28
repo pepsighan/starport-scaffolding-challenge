@@ -117,7 +117,8 @@ func (c *Clipper) PasteGeneratedCodeSnippetAt(
 	}
 
 	if result.OffsetPosition == NoOffsetPosition {
-		return "", ErrNoPositionToGenerateCodeFound
+		// Do nothing and return the code as is. The errors are accumulated by the clipper.
+		return code, nil
 	}
 
 	offsetPosition := result.OffsetPosition
