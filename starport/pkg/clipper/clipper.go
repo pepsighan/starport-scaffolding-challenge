@@ -15,6 +15,7 @@ type Clipper struct {
 	*placeholder.Tracer
 	// Missing clipper selections that is needed for the clipper to work.
 	missingSelections       []int
+	missingSelectionFiles   []string
 	missingSelectionOptions []SelectOptions
 }
 
@@ -29,57 +30,72 @@ func (c *Clipper) Err() error {
 
 	if len(c.missingSelections) > 0 {
 		for id, sel := range c.missingSelections {
+			file := c.missingSelectionFiles[id]
+			options := c.missingSelectionOptions[id]
+
 			switch sel {
 			case ProtoSelectNewImportPosition.id:
-				missingSelections = append(missingSelections, "cannot find position to add new import")
+				missingSelections = append(
+					missingSelections,
+					fmt.Sprintf("◦ cannot find position to add new import in %v", file),
+				)
 			case ProtoSelectNewMessageFieldPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find message %v", c.missingSelectionOptions[id]["name"]),
+					fmt.Sprintf("◦ cannot find message %v in %v", options["name"], file),
 				)
 			case ProtoSelectNewServiceMethodPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find service %v", c.missingSelectionOptions[id]["name"]),
+					fmt.Sprintf("◦ cannot find service %v in %v", options["name"], file),
 				)
 			case ProtoSelectNewOneOfFieldPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find message %v with oneof field %v",
-						c.missingSelectionOptions[id]["messageName"], c.missingSelectionOptions[id]["oneOfName"]),
+					fmt.Sprintf("◦ cannot find message %v with oneof field %v in %v",
+						options["messageName"], options["oneOfName"], file),
 				)
 			case ProtoSelectLastPosition.id:
-				missingSelections = append(missingSelections, "cannot find last position of file")
+				missingSelections = append(
+					missingSelections,
+					fmt.Sprintf("◦ cannot find last position of file in %v", file),
+				)
 			case GoSelectNewImportPosition.id:
-				missingSelections = append(missingSelections, "cannot find position to add new import")
+				missingSelections = append(
+					missingSelections,
+					fmt.Sprintf("◦ cannot find position to add new import in %v", file),
+				)
 			case GoSelectNewGlobalPosition.id:
-				missingSelections = append(missingSelections, "cannot find position for global declaration")
+				missingSelections = append(
+					missingSelections,
+					fmt.Sprintf("◦ cannot find position for global declaration in %v", file),
+				)
 			case GoSelectBeforeFunctionReturnsPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find function %v", c.missingSelectionOptions[id]["functionName"]),
+					fmt.Sprintf("◦ cannot find function %v in %v", options["functionName"], file),
 				)
 			case GoSelectStartOfFunctionPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find function %v", c.missingSelectionOptions[id]["functionName"]),
+					fmt.Sprintf("◦ cannot find function %v in %v", options["functionName"], file),
 				)
 			case GoSelectReturningFunctionCallNewArgumentPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find function %v which is returning value with a function call",
-						c.missingSelectionOptions[id]["functionName"]),
+					fmt.Sprintf("◦ cannot find function %v which is returning value with a function call in %v",
+						options["functionName"], file),
 				)
 			case GoSelectReturningCompositeNewArgumentPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find function %v which is returning value with a map/struct call",
-						c.missingSelectionOptions[id]["functionName"]),
+					fmt.Sprintf("◦ cannot find function %v which is returning value with a map/struct call in %v",
+						options["functionName"], file),
 				)
 			case GoSelectStructNewFieldPosition.id:
 				missingSelections = append(
 					missingSelections,
-					fmt.Sprintf("cannot find struct %v", c.missingSelectionOptions[id]["structName"]),
+					fmt.Sprintf("◦ cannot find struct %v in %v", options["structName"], file),
 				)
 			}
 		}
@@ -117,7 +133,11 @@ func (c *Clipper) PasteGeneratedCodeSnippetAt(
 	}
 
 	if result.OffsetPosition == NoOffsetPosition {
-		return "", ErrNoPositionToGenerateCodeFound
+		// Do nothing and return the code as is. The errors are accumulated by the clipper.
+		c.missingSelections = append(c.missingSelections, selector.id)
+		c.missingSelectionFiles = append(c.missingSelectionFiles, path)
+		c.missingSelectionOptions = append(c.missingSelectionOptions, options)
+		return code, nil
 	}
 
 	offsetPosition := result.OffsetPosition
