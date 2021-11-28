@@ -13,13 +13,18 @@ type ValidationError struct {
 
 // Error implements the Error interface for ValidationError.
 func (v *ValidationError) Error() string {
+	err := ""
+
+	if v.tracerError != nil {
+		err += v.tracerError.Error() + "\n\n"
+	}
+
 	if len(v.missingSelections) > 0 {
-		return fmt.Sprintf(
-			"%v\n\ncode in improper structure:\n%v",
-			v.tracerError.Error(),
+		err += fmt.Sprintf(
+			"code in improper structure:\n%v",
 			strings.Join(v.missingSelections, "\n"),
 		)
 	}
 
-	return v.tracerError.Error()
+	return err
 }
