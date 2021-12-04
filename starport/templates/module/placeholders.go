@@ -1,12 +1,10 @@
 package module
 
 const (
-	Placeholder  = "// this line is used by starport scaffolding # 1"
 	Placeholder2 = "// this line is used by starport scaffolding # 2"
 	Placeholder3 = "// this line is used by starport scaffolding # 3"
 
 	// Placeholders in Stargate app.go
-	PlaceholderSgAppModuleImport        = "// this line is used by starport scaffolding # stargate/app/moduleImport"
 	PlaceholderSgAppModuleBasic         = "// this line is used by starport scaffolding # stargate/app/moduleBasic"
 	PlaceholderSgAppKeeperDeclaration   = "// this line is used by starport scaffolding # stargate/app/keeperDeclaration"
 	PlaceholderSgAppStoreKey            = "// this line is used by starport scaffolding # stargate/app/storeKey"
@@ -20,13 +18,9 @@ const (
 	PlaceholderSgAppMaccPerms           = "// this line is used by starport scaffolding # stargate/app/maccPerms"
 
 	// Placeholders in Stargate app.go for wasm
-	PlaceholderSgWasmAppEnabledProposals = "// this line is used by starport scaffolding # stargate/wasm/app/enabledProposals"
-	PlaceholderSgRootArgument            = "// this line is used by starport scaffolding # root/arguments"
+	PlaceholderSgRootArgument = "// this line is used by starport scaffolding # root/arguments"
 
 	// Placeholders IBC
-	PlaceholderIBCErrors                     = "// this line is used by starport scaffolding # ibc/errors"
-	PlaceholderIBCKeysName                   = "// this line is used by starport scaffolding # ibc/keys/name"
-	PlaceholderIBCKeysPort                   = "// this line is used by starport scaffolding # ibc/keys/port"
 	PlaceholderIBCAppScopedKeeperDeclaration = "// this line is used by starport scaffolding # ibc/app/scopedKeeper/declaration"
 	PlaceholderIBCAppScopedKeeperDefinition  = "// this line is used by starport scaffolding # ibc/app/scopedKeeper/definition"
 	PlaceholderIBCAppKeeperArgument          = "// this line is used by starport scaffolding # ibc/app/keeper/argument"
