@@ -1,3 +1,7 @@
+# Starport Code Scaffolding Challenge
+
+This project was created to participate in Hackatom VI 2021 (https://hackatom.org/) or (https://cosmos-hackatom-vi.devpost.com/). You may find the showcase video at https://www.youtube.com/watch?v=RL0wZgWBOdo.
+
 # Starport
 
 ![Starport](./assets/starport.png)
